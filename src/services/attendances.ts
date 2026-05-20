@@ -21,8 +21,8 @@ export interface ListAttendancesParams {
   offset?: number;
 }
 
-function toQuery(params: Record<string, unknown>): string {
-  const entries = Object.entries(params).filter(
+function toQuery(params: object): string {
+  const entries = Object.entries(params as Record<string, unknown>).filter(
     ([, v]) => v !== undefined && v !== null && v !== "",
   );
   if (entries.length === 0) return "";

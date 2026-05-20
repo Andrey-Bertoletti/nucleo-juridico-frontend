@@ -5,9 +5,9 @@ import { AuthProvider } from "@/features/auth/AuthContext";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "Núcleo Jurídico — Gestão de Atendimento",
+  title: "NPJ - ITES — Sistema de Gestão de Atendimento Jurídico",
   description:
-    "Sistema de gestão de atendimento jurídico para núcleos e escritórios.",
+    "Plataforma do Núcleo de Práticas Jurídicas do Instituto Taquaritinguense de Ensino Superior.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

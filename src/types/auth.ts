@@ -24,6 +24,14 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface RegisterResponse {
+  user: User;
+  access_token: string | null;
+  refresh_token: string | null;
+  expires_in: number | null;
+  requires_email_confirmation: boolean;
+}
+
 export const ROLE_LABELS: Record<Role, string> = {
   aluno_estagiario: "Aluno / Estagiário",
   professor_orientador: "Professor / Orientador",

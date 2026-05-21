@@ -63,6 +63,7 @@ export interface AttendanceHistoryItem {
   id: string;
   attendance_id: string;
   user_id: string | null;
+  user_name: string | null;
   event_type: HistoryEventType;
   description: string | null;
   old_status: AttendanceStatus | null;

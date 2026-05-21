@@ -51,6 +51,7 @@ export interface ClientHistoryItem {
   id: string;
   client_id: string;
   user_id: string | null;
+  user_name: string | null;
   event_type: ClientHistoryEvent;
   description: string | null;
   changes: Record<string, unknown> | null;

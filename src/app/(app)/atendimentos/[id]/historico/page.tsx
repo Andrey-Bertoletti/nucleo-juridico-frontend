@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { EmptyState } from "@/components/feedback/EmptyState";
 import { LoadingState } from "@/components/feedback/LoadingState";
-import { AttendanceStatusBadge } from "@/components/feedback/StatusBadge";
+import { Timeline, type TimelineEvent } from "@/components/feedback/Timeline";
 import { Card } from "@/components/ui/Card";
 import { useAttendanceDetail } from "@/features/attendances/AttendanceDetailContext";
-import { formatDateTimeBR } from "@/lib/format";
 import { ApiError } from "@/services/api";
 import { getAttendanceHistory } from "@/services/attendances";
 import {
+  ATTENDANCE_STATUS_LABELS,
   HISTORY_EVENT_LABELS,
   type AttendanceHistoryItem,
+  type AttendanceStatus,
 } from "@/types/attendance";
 
 export default function HistoricoTab() {
@@ -42,6 +42,11 @@ export default function HistoricoTab() {
     };
   }, [attendance.id]);
 
+  const events: TimelineEvent[] = useMemo(
+    () => items.map(toTimelineEvent),
+    [items],
+  );
+
   if (loading) return <LoadingState message="Carregando histórico..." />;
   if (error) {
     return (
@@ -50,54 +55,37 @@ export default function HistoricoTab() {
       </Card>
     );
   }
-  if (items.length === 0) {
-    return (
-      <EmptyState
-        title="Sem eventos registrados"
-        description="O histórico de mudanças deste atendimento aparecerá aqui."
-      />
-    );
-  }
 
   return (
-    <ol className="relative space-y-4 border-l-2 border-slate-200 pl-6">
-      {items.map((item) => (
-        <li key={item.id} className="relative">
-          <span className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full bg-slate-900" />
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-900">
-                {HISTORY_EVENT_LABELS[item.event_type] || item.event_type}
-              </h3>
-              <span className="text-xs text-slate-500">
-                {formatDateTimeBR(item.created_at)}
-              </span>
-            </div>
-
-            {(item.old_status || item.new_status) && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                {item.old_status ? (
-                  <AttendanceStatusBadge value={item.old_status} />
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-                <span aria-hidden>→</span>
-                {item.new_status ? (
-                  <AttendanceStatusBadge value={item.new_status} />
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </div>
-            )}
-
-            {item.description && (
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                {item.description}
-              </p>
-            )}
-          </Card>
-        </li>
-      ))}
-    </ol>
+    <Timeline
+      events={events}
+      emptyTitle="Sem eventos registrados"
+      emptyDescription="O histórico de mudanças deste atendimento aparecerá aqui."
+    />
   );
+}
+
+function toTimelineEvent(item: AttendanceHistoryItem): TimelineEvent {
+  const title = HISTORY_EVENT_LABELS[item.event_type] || item.event_type;
+  const statusChange =
+    item.old_status || item.new_status
+      ? {
+          fromLabel: item.old_status
+            ? ATTENDANCE_STATUS_LABELS[item.old_status as AttendanceStatus] ||
+              item.old_status
+            : "—",
+          toLabel: item.new_status
+            ? ATTENDANCE_STATUS_LABELS[item.new_status as AttendanceStatus] ||
+              item.new_status
+            : "—",
+        }
+      : null;
+  return {
+    id: item.id,
+    title,
+    timestamp: item.created_at,
+    userName: item.user_name,
+    description: item.description,
+    statusChange,
+  };
 }

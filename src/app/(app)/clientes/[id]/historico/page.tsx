@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { EmptyState } from "@/components/feedback/EmptyState";
 import { LoadingState } from "@/components/feedback/LoadingState";
+import { Timeline, type TimelineEvent } from "@/components/feedback/Timeline";
 import { Card } from "@/components/ui/Card";
 import { useClientDetail } from "@/features/clients/ClientDetailContext";
-import { formatDateTimeBR } from "@/lib/format";
 import { ApiError } from "@/services/api";
 import { getClientHistory } from "@/services/clients";
 import { HISTORY_EVENT_LABELS, type ClientHistoryItem } from "@/types/client";
@@ -25,11 +24,10 @@ export default function ClientHistoricoTab() {
         if (!cancelled) setItems(rows);
       })
       .catch((err) => {
-        if (!cancelled) {
-          setError(
-            err instanceof ApiError ? err.detail : "Erro ao carregar histórico.",
-          );
-        }
+        if (cancelled) return;
+        setError(
+          err instanceof ApiError ? err.detail : "Erro ao carregar histórico.",
+        );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -39,56 +37,49 @@ export default function ClientHistoricoTab() {
     };
   }, [client.id]);
 
+  const events: TimelineEvent[] = useMemo(
+    () => items.map(toTimelineEvent),
+    [items],
+  );
+
   if (loading) return <LoadingState message="Carregando histórico..." />;
-  if (error)
+  if (error) {
     return (
       <Card>
         <p className="text-sm text-red-700">{error}</p>
       </Card>
     );
-  if (items.length === 0) {
-    return (
-      <EmptyState
-        title="Sem eventos registrados"
-        description="O histórico do cliente aparecerá aqui a partir do próximo evento."
-      />
-    );
   }
 
   return (
-    <ol className="relative space-y-4 border-l-2 border-slate-200 pl-6">
-      {items.map((item) => (
-        <li key={item.id} className="relative">
-          <span className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full bg-slate-900" />
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-900">
-                {HISTORY_EVENT_LABELS[item.event_type] || item.event_type}
-              </h3>
-              <span className="text-xs text-slate-500">
-                {formatDateTimeBR(item.created_at)}
-              </span>
-            </div>
-            {item.description && (
-              <p className="mt-2 text-sm text-slate-700">{item.description}</p>
-            )}
-            {item.changes && Object.keys(item.changes).length > 0 && (
-              <ChangesList changes={item.changes} />
-            )}
-          </Card>
-        </li>
-      ))}
-    </ol>
+    <Timeline
+      events={events}
+      emptyTitle="Sem eventos registrados"
+      emptyDescription="O histórico do cadastro do cliente aparecerá aqui."
+    />
   );
 }
 
-function ChangesList({ changes }: { changes: Record<string, unknown> }) {
+function toTimelineEvent(item: ClientHistoryItem): TimelineEvent {
+  return {
+    id: item.id,
+    title: HISTORY_EVENT_LABELS[item.event_type] || item.event_type,
+    timestamp: item.created_at,
+    userName: item.user_name,
+    description: item.description,
+    extra: item.changes && Object.keys(item.changes).length > 0
+      ? renderChanges(item.changes)
+      : undefined,
+  };
+}
+
+function renderChanges(changes: Record<string, unknown>) {
   const entries = Object.entries(changes);
   return (
-    <dl className="mt-3 space-y-1 rounded-md bg-slate-50 px-3 py-2 text-xs">
+    <dl className="space-y-1 rounded-md bg-slate-50 px-3 py-2 text-xs">
       {entries.map(([field, value]) => (
         <div key={field} className="grid grid-cols-3 gap-2">
-          <dt className="font-medium text-slate-600">{field}</dt>
+          <dt className="font-medium text-slate-600">{humanize(field)}</dt>
           <dd className="col-span-2 text-slate-700">{describe(value)}</dd>
         </div>
       ))}
@@ -110,7 +101,29 @@ function describe(value: unknown): string {
 }
 
 function stringify(v: unknown): string {
-  if (v === null || v === undefined) return "—";
+  if (v === null || v === undefined || v === "") return "—";
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  full_name: "Nome",
+  cpf: "CPF",
+  rg: "RG",
+  birth_date: "Nascimento",
+  phone: "Telefone",
+  email: "E-mail",
+  address: "Endereço",
+  district: "Bairro",
+  city: "Cidade",
+  state: "UF",
+  marital_status: "Estado civil",
+  profession: "Profissão",
+  family_income: "Renda familiar",
+  notes: "Observações",
+  status: "Status",
+};
+
+function humanize(field: string): string {
+  return FIELD_LABELS[field] || field;
 }

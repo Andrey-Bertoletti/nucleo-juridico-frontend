@@ -1,19 +1,36 @@
 "use client";
 
-// TODO: módulo em desenvolvimento — gestão de usuários, áreas, tipos de demanda e configurações.
+import Link from "next/link";
 
 import { AccessDenied } from "@/components/feedback/AccessDenied";
-import { EmptyState } from "@/components/feedback/EmptyState";
+import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/features/auth/useAuth";
+
+const CARDS = [
+  {
+    href: "/admin/usuarios",
+    title: "Usuários",
+    description:
+      "Cadastrar, editar e ativar/desativar contas (alunos, professores e coordenação).",
+  },
+  {
+    href: "/admin/areas-juridicas",
+    title: "Áreas jurídicas",
+    description:
+      "Manter as áreas do direito disponíveis para classificar atendimentos.",
+  },
+  {
+    href: "/admin/tipos-demanda",
+    title: "Tipos de demanda",
+    description:
+      "Gerenciar os tipos de demanda associados a cada área jurídica.",
+  },
+];
 
 export default function AdministracaoPage() {
   const { hasRole } = useAuth();
-  const allowed = hasRole("admin_coordenacao");
-
-  if (!allowed) {
-    return (
-      <AccessDenied message="Esta área é exclusiva para a coordenação." />
-    );
+  if (!hasRole("admin_coordenacao")) {
+    return <AccessDenied message="Esta área é exclusiva para a coordenação." />;
   }
 
   return (
@@ -21,14 +38,25 @@ export default function AdministracaoPage() {
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Administração</h1>
         <p className="text-sm text-slate-500">
-          Gestão de usuários, áreas do direito, tipos de demanda e configurações do núcleo.
+          Gestão de usuários, áreas do direito e tipos de demanda.
         </p>
       </div>
 
-      <EmptyState
-        title="Em desenvolvimento"
-        description="O painel administrativo (CRUD de usuários, áreas e tipos de demanda) será habilitado em breve. Por enquanto, as operações podem ser feitas pela API ou pelo Supabase Studio."
-      />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {CARDS.map((c) => (
+          <Link key={c.href} href={c.href}>
+            <Card
+              title={c.title}
+              description={c.description}
+              className="h-full transition-shadow hover:shadow-md"
+            >
+              <p className="text-sm font-medium text-slate-700">
+                Acessar →
+              </p>
+            </Card>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

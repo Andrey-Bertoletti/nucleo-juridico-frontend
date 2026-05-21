@@ -70,3 +70,37 @@ export async function apiFetch<T = unknown>(
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/**
+ * Upload de arquivos via multipart/form-data.
+ * Não setamos Content-Type — o `fetch` adiciona com o boundary correto.
+ */
+export async function apiUpload<T = unknown>(
+  path: string,
+  formData: FormData,
+  method: "POST" | "PUT" | "PATCH" = "POST",
+): Promise<T> {
+  const token = getStoredToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const data = await res.json();
+      detail = data?.detail || detail;
+    } catch {
+      // resposta sem corpo JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}

@@ -2,6 +2,11 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import {
+  APPOINTMENT_STATUS_LABELS,
+  APPOINTMENT_STATUS_TONES,
+  type AppointmentStatus,
+} from "@/types/appointment";
+import {
   ATTENDANCE_STATUS_LABELS,
   ATTENDANCE_STATUS_TONES,
   type AttendanceStatus,
@@ -56,4 +61,16 @@ export function UrgencyBadge({ urgency }: { urgency: boolean }) {
     return <StatusBadge tone="slate">Normal</StatusBadge>;
   }
   return <StatusBadge tone="rose">Urgente</StatusBadge>;
+}
+
+export function AppointmentStatusBadge({
+  value,
+}: {
+  value: AppointmentStatus;
+}) {
+  return (
+    <StatusBadge tone={APPOINTMENT_STATUS_TONES[value]}>
+      {APPOINTMENT_STATUS_LABELS[value]}
+    </StatusBadge>
+  );
 }

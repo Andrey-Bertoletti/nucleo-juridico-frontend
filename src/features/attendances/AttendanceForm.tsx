@@ -6,9 +6,10 @@ import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { maskCpf } from "@/lib/format";
 import {
   attendanceFormSchema,
   type AttendanceFormInput,
@@ -145,18 +146,28 @@ export function AttendanceForm({
       <Card title="Cliente e classificação">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <Select
-              label="Cliente / Assistido *"
-              {...register("client_id")}
-              error={errors.client_id?.message}
-            >
-              <option value="">Selecione...</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.full_name}
-                </option>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="client_id"
+              render={({ field, fieldState }) => (
+                <Combobox
+                  label="Cliente / Assistido *"
+                  placeholder="Busque por nome ou CPF..."
+                  emptyMessage="Nenhum cliente encontrado."
+                  value={field.value || null}
+                  onChange={(key) => field.onChange(key || "")}
+                  options={clients}
+                  getKey={(c) => c.id}
+                  getLabel={(c) => c.full_name}
+                  getDescription={(c) =>
+                    [c.cpf ? maskCpf(c.cpf) : null, c.city]
+                      .filter(Boolean)
+                      .join(" · ") || null
+                  }
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
           </div>
 
           <Select
@@ -228,18 +239,24 @@ export function AttendanceForm({
       </Card>
 
       <Card title="Responsável (opcional)">
-        <Select
-          label="Professor / Orientador"
-          {...register("teacher_id")}
-          error={errors.teacher_id?.message}
-        >
-          <option value="">Sem professor definido</option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </Select>
+        <Controller
+          control={control}
+          name="teacher_id"
+          render={({ field, fieldState }) => (
+            <Combobox
+              label="Professor / Orientador"
+              placeholder="Busque pelo nome..."
+              emptyMessage="Nenhum professor encontrado."
+              value={field.value || null}
+              onChange={(key) => field.onChange(key || "")}
+              options={teachers}
+              getKey={(t) => t.id}
+              getLabel={(t) => t.name}
+              getDescription={(t) => t.email}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
       </Card>
 
       {serverError && (

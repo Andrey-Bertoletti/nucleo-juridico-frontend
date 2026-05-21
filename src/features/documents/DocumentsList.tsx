@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { StatusBadge } from "@/components/feedback/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { formatDateTimeBR } from "@/lib/format";
 import { ApiError } from "@/services/api";
@@ -19,6 +20,7 @@ import {
   DOCUMENT_TYPE_LABELS,
   type DocumentItem,
   type DocumentStatus,
+  type DocumentType,
 } from "@/types/document";
 
 interface DocumentsListProps {
@@ -44,6 +46,20 @@ export function DocumentsList({
 }: DocumentsListProps) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Busca interna por nome/observação + filtro por tipo
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<DocumentType | "">("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return documents.filter((d) => {
+      if (typeFilter && d.document_type !== typeFilter) return false;
+      if (!q) return true;
+      const haystack = `${d.file_name} ${d.notes ?? ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [documents, query, typeFilter]);
 
   async function handleStatus(doc: DocumentItem, status: DocumentStatus) {
     if (doc.status === status) return;
@@ -108,19 +124,52 @@ export function DocumentsList({
         </p>
       )}
 
-      <Card className="overflow-x-auto !p-0">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Nome do documento</th>
-              <th className="px-4 py-3">Tipo</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Enviado em</th>
-              <th className="px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((doc) => {
+      {documents.length > 3 && (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <Input
+              label="Buscar"
+              placeholder="Nome do arquivo ou observação..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <Select
+            label="Tipo"
+            value={typeFilter}
+            onChange={(e) =>
+              setTypeFilter(e.target.value as DocumentType | "")
+            }
+          >
+            <option value="">Todos os tipos</option>
+            {(Object.keys(DOCUMENT_TYPE_LABELS) as DocumentType[]).map((t) => (
+              <option key={t} value={t}>
+                {DOCUMENT_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
+
+      {filtered.length === 0 && (query || typeFilter) ? (
+        <EmptyState
+          title="Nenhum documento encontrado"
+          description="Tente ajustar a busca ou o filtro de tipo."
+        />
+      ) : (
+        <Card className="overflow-x-auto !p-0">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Nome do documento</th>
+                <th className="px-4 py-3">Tipo</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Enviado em</th>
+                <th className="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((doc) => {
               const busy = busyId === doc.id;
               return (
                 <tr
@@ -213,9 +262,10 @@ export function DocumentsList({
                 </tr>
               );
             })}
-          </tbody>
-        </table>
-      </Card>
+            </tbody>
+          </table>
+        </Card>
+      )}
     </div>
   );
 }

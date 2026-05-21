@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useAuth } from "@/features/auth/useAuth";
+import { cn } from "@/lib/utils";
 import { formatDateTimeBR } from "@/lib/format";
 import { ApiError } from "@/services/api";
 import { listAttendances } from "@/services/attendances";
@@ -32,8 +33,10 @@ import {
 } from "@/types/attendance";
 
 export default function AtendimentosPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const canCreate = hasRole("aluno_estagiario", "admin_coordenacao");
+  const isStudent = hasRole("aluno_estagiario");
+  const isTeacher = hasRole("professor_orientador");
 
   const [data, setData] = useState<AttendanceListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,6 +151,33 @@ export default function AtendimentosPage() {
           </Link>
         )}
       </div>
+
+      <QuickFilters
+        urgency={urgency}
+        statusFilter={statusFilter}
+        studentId={studentId}
+        teacherId={teacherId}
+        myProfileId={user?.id || ""}
+        isStudent={isStudent}
+        isTeacher={isTeacher}
+        clearAll={() => {
+          setSearch("");
+          setStatusFilter("");
+          setLegalAreaId("");
+          setStudentId("");
+          setTeacherId("");
+          setFromDate("");
+          setToDate("");
+          setUrgency("");
+        }}
+        onApply={(patch) => {
+          if (patch.urgency !== undefined) setUrgency(patch.urgency);
+          if (patch.statusFilter !== undefined)
+            setStatusFilter(patch.statusFilter);
+          if (patch.studentId !== undefined) setStudentId(patch.studentId);
+          if (patch.teacherId !== undefined) setTeacherId(patch.teacherId);
+        }}
+      />
 
       <Card>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -334,6 +364,123 @@ function AttendancesTable({ rows }: { rows: AttendanceListItem[] }) {
         </tbody>
       </table>
     </Card>
+  );
+}
+
+interface QuickFiltersProps {
+  urgency: "" | "true" | "false";
+  statusFilter: AttendanceStatus | "";
+  studentId: string;
+  teacherId: string;
+  myProfileId: string;
+  isStudent: boolean;
+  isTeacher: boolean;
+  clearAll: () => void;
+  onApply: (patch: {
+    urgency?: "" | "true" | "false";
+    statusFilter?: AttendanceStatus | "";
+    studentId?: string;
+    teacherId?: string;
+  }) => void;
+}
+
+function QuickFilters({
+  urgency,
+  statusFilter,
+  studentId,
+  teacherId,
+  myProfileId,
+  isStudent,
+  isTeacher,
+  clearAll,
+  onApply,
+}: QuickFiltersProps) {
+  const chips: Array<{ label: string; active: boolean; onClick: () => void }> =
+    [
+      {
+        label: "Urgentes",
+        active: urgency === "true",
+        onClick: () =>
+          onApply({ urgency: urgency === "true" ? "" : "true" }),
+      },
+      {
+        label: "Em triagem",
+        active: statusFilter === "em_triagem",
+        onClick: () =>
+          onApply({
+            statusFilter: statusFilter === "em_triagem" ? "" : "em_triagem",
+          }),
+      },
+      {
+        label: "Aguardando documentos",
+        active: statusFilter === "aguardando_documentos",
+        onClick: () =>
+          onApply({
+            statusFilter:
+              statusFilter === "aguardando_documentos"
+                ? ""
+                : "aguardando_documentos",
+          }),
+      },
+      {
+        label: "Encaminhados ao professor",
+        active: statusFilter === "encaminhado_ao_professor",
+        onClick: () =>
+          onApply({
+            statusFilter:
+              statusFilter === "encaminhado_ao_professor"
+                ? ""
+                : "encaminhado_ao_professor",
+          }),
+      },
+    ];
+
+  if (isStudent && myProfileId) {
+    chips.push({
+      label: "Meus atendimentos",
+      active: studentId === myProfileId,
+      onClick: () =>
+        onApply({ studentId: studentId === myProfileId ? "" : myProfileId }),
+    });
+  }
+  if (isTeacher && myProfileId) {
+    chips.push({
+      label: "Sob minha orientação",
+      active: teacherId === myProfileId,
+      onClick: () =>
+        onApply({ teacherId: teacherId === myProfileId ? "" : myProfileId }),
+    });
+  }
+
+  const anyActive = chips.some((c) => c.active);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {chips.map((c) => (
+        <button
+          key={c.label}
+          type="button"
+          onClick={c.onClick}
+          className={cn(
+            "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            c.active
+              ? "border-slate-900 bg-slate-900 text-white"
+              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100",
+          )}
+        >
+          {c.label}
+        </button>
+      ))}
+      {anyActive && (
+        <button
+          type="button"
+          onClick={clearAll}
+          className="ml-1 inline-flex items-center rounded-full border border-transparent px-3 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
+        >
+          Limpar filtros
+        </button>
+      )}
+    </div>
   );
 }
 

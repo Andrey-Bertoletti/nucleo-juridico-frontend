@@ -1,5 +1,5 @@
 import { apiFetch } from "@/services/api";
-import type { LoginResponse, RegisterResponse, User } from "@/types/auth";
+import type { LoginResponse, User } from "@/types/auth";
 
 export async function login(
   email: string,
@@ -8,17 +8,6 @@ export async function login(
   return apiFetch<LoginResponse>("/auth/login", {
     method: "POST",
     body: { email, password },
-  });
-}
-
-export async function register(
-  name: string,
-  email: string,
-  password: string,
-): Promise<RegisterResponse> {
-  return apiFetch<RegisterResponse>("/auth/register", {
-    method: "POST",
-    body: { name, email, password },
   });
 }
 

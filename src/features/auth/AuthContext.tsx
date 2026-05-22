@@ -13,20 +13,10 @@ import { clearToken, getStoredToken, storeToken } from "@/services/api";
 import * as authService from "@/services/auth";
 import type { Role, User } from "@/types/auth";
 
-export interface RegisterResult {
-  autoLoggedIn: boolean;
-  requiresEmailConfirmation: boolean;
-}
-
 export interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    name: string,
-    email: string,
-    password: string,
-  ) => Promise<RegisterResult>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
@@ -50,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await authService.getMe();
       setUser(me);
     } catch {
+      // Token inválido/expirado — limpa e força login
       clearToken();
       setUser(null);
     } finally {
@@ -66,26 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storeToken(result.access_token);
     setUser(result.user);
   }, []);
-
-  const register = useCallback(
-    async (
-      name: string,
-      email: string,
-      password: string,
-    ): Promise<RegisterResult> => {
-      const result = await authService.register(name, email, password);
-      if (result.access_token) {
-        storeToken(result.access_token);
-        setUser(result.user);
-        return { autoLoggedIn: true, requiresEmailConfirmation: false };
-      }
-      return {
-        autoLoggedIn: false,
-        requiresEmailConfirmation: result.requires_email_confirmation,
-      };
-    },
-    [],
-  );
 
   const logout = useCallback(async () => {
     try {
@@ -110,15 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        refreshUser,
-        hasRole,
-      }}
+      value={{ user, loading, login, logout, refreshUser, hasRole }}
     >
       {children}
     </AuthContext.Provider>

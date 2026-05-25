@@ -90,9 +90,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500">
+      <div className="animate-fade-in-down">
+        <h1 className="text-[28px] font-semibold tracking-[-0.025em] text-ink">
+          Dashboard
+        </h1>
+        <p className="text-[14px] text-ink-muted">
           Bem-vindo(a), {user?.name}. Visão de {greetingRole}.
         </p>
       </div>
@@ -319,22 +321,23 @@ function PendingListCard({
       {items.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {items.slice(0, 6).map((a) => (
+        <ul className="divide-y divide-line-subtle">
+          {items.slice(0, 6).map((a, i) => (
             <li
               key={a.id}
-              className="flex flex-wrap items-center justify-between gap-2 py-3"
+              className="flex flex-wrap items-center justify-between gap-2 py-3 animate-fade-in-up"
+              style={{ animationDelay: `${i * 40}ms` }}
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-900">
+                <p className="truncate text-[14px] font-medium text-ink">
                   <Link
                     href={`/atendimentos/${a.id}`}
-                    className="hover:underline"
+                    className="transition-colors hover:text-brand"
                   >
                     {a.client_name}
                   </Link>
                 </p>
-                <p className="truncate text-xs text-slate-500">
+                <p className="truncate text-[12px] text-ink-subtle">
                   {a.legal_area_name || "Sem área"} ·{" "}
                   {formatDateTimeBR(a.updated_at)}
                 </p>
@@ -346,7 +349,7 @@ function PendingListCard({
             </li>
           ))}
           {items.length > 6 && (
-            <li className="pt-3 text-center text-xs text-slate-500">
+            <li className="pt-3 text-center text-[12px] text-ink-subtle">
               +{items.length - 6} casos adicionais
             </li>
           )}

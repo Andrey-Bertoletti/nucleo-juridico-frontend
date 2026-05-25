@@ -138,16 +138,18 @@ export default function AtendimentosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-in-down">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Atendimentos</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-[28px] font-semibold tracking-[-0.025em] text-ink">
+            Atendimentos
+          </h1>
+          <p className="text-[14px] text-ink-muted">
             Lista dos casos jurídicos abertos no núcleo.
           </p>
         </div>
         {canCreate && (
           <Link href="/atendimentos/novo">
-            <Button>Novo atendimento</Button>
+            <Button variant="brand">+ Novo atendimento</Button>
           </Link>
         )}
       </div>
@@ -301,37 +303,38 @@ export default function AtendimentosPage() {
 function AttendancesTable({ rows }: { rows: AttendanceListItem[] }) {
   return (
     <Card className="overflow-x-auto !p-0">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <table className="w-full text-left text-[13px]">
+        <thead className="border-b border-line-subtle bg-surface-sunken/60 text-[11px] uppercase tracking-[0.05em] text-ink-subtle">
           <tr>
-            <th className="px-4 py-3">Cliente</th>
-            <th className="px-4 py-3">Área jurídica</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3">Urgência</th>
-            <th className="px-4 py-3">Aluno</th>
-            <th className="px-4 py-3">Professor</th>
-            <th className="px-4 py-3">Atualizado em</th>
-            <th className="px-4 py-3 text-right">Ações</th>
+            <th className="px-4 py-3 font-medium">Cliente</th>
+            <th className="px-4 py-3 font-medium">Área jurídica</th>
+            <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 font-medium">Urgência</th>
+            <th className="px-4 py-3 font-medium">Aluno</th>
+            <th className="px-4 py-3 font-medium">Professor</th>
+            <th className="px-4 py-3 font-medium">Atualizado em</th>
+            <th className="px-4 py-3 text-right font-medium">Ações</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((a) => (
+          {rows.map((a, i) => (
             <tr
               key={a.id}
-              className="border-b border-slate-50 last:border-b-0 hover:bg-slate-50"
+              className="border-b border-line-subtle last:border-b-0 transition-colors hover:bg-surface-sunken/60 animate-fade-in"
+              style={{ animationDelay: `${Math.min(i * 20, 200)}ms` }}
             >
-              <td className="px-4 py-3 font-medium text-slate-900">
+              <td className="px-4 py-3 font-medium text-ink">
                 <Link
                   href={`/atendimentos/${a.id}`}
-                  className="hover:underline underline-offset-2"
+                  className="transition-colors hover:text-brand"
                 >
                   {a.client_name}
                 </Link>
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {a.legal_area_name || "—"}
                 {a.demand_type_name && (
-                  <span className="block text-xs text-slate-500">
+                  <span className="block text-[11px] text-ink-subtle">
                     {a.demand_type_name}
                   </span>
                 )}
@@ -342,21 +345,21 @@ function AttendancesTable({ rows }: { rows: AttendanceListItem[] }) {
               <td className="px-4 py-3">
                 <UrgencyBadge urgency={a.urgency} />
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {a.student_name || "—"}
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {a.teacher_name || "—"}
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {formatDateTimeBR(a.updated_at)}
               </td>
               <td className="px-4 py-3 text-right">
                 <Link
                   href={`/atendimentos/${a.id}`}
-                  className="text-xs font-medium text-slate-700 hover:underline"
+                  className="text-[12px] font-medium text-brand transition-colors hover:text-brand-hover"
                 >
-                  Abrir
+                  Abrir →
                 </Link>
               </td>
             </tr>
@@ -462,10 +465,11 @@ function QuickFilters({
           type="button"
           onClick={c.onClick}
           className={cn(
-            "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em]",
+            "transition-all duration-200 ease-apple-snap active:scale-95",
             c.active
-              ? "border-slate-900 bg-slate-900 text-white"
-              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100",
+              ? "border-brand bg-brand text-white shadow-apple-sm"
+              : "border-line bg-surface-card text-ink-muted hover:bg-surface-sunken hover:text-ink",
           )}
         >
           {c.label}
@@ -475,7 +479,7 @@ function QuickFilters({
         <button
           type="button"
           onClick={clearAll}
-          className="ml-1 inline-flex items-center rounded-full border border-transparent px-3 py-1 text-xs font-medium text-slate-500 hover:text-slate-900"
+          className="ml-1 inline-flex items-center rounded-full px-3 py-1.5 text-[12px] font-medium text-ink-subtle transition-colors hover:text-ink"
         >
           Limpar filtros
         </button>

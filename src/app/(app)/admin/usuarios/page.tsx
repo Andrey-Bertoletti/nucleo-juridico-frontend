@@ -114,16 +114,18 @@ export default function AdminUsuariosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-in-down">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Usuários</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-[28px] font-semibold tracking-[-0.025em] text-ink">
+            Usuários
+          </h1>
+          <p className="text-[14px] text-ink-muted">
             Cadastre, edite e gerencie o acesso de alunos, professores e
             coordenação.
           </p>
         </div>
         <Link href="/admin/usuarios/novo">
-          <Button>Novo usuário</Button>
+          <Button variant="brand">+ Novo usuário</Button>
         </Link>
       </div>
 
@@ -132,8 +134,8 @@ export default function AdminUsuariosPage() {
           role="status"
           className={
             feedback.type === "success"
-              ? "rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
-              : "rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+              ? "animate-fade-in rounded-xl border border-accent-emerald/25 bg-accent-emerald/10 px-3.5 py-2.5 text-[13px] text-accent-emerald"
+              : "animate-fade-in rounded-xl border border-accent-rose/25 bg-accent-rose/10 px-3.5 py-2.5 text-[13px] text-accent-rose"
           }
         >
           {feedback.message}
@@ -193,27 +195,26 @@ export default function AdminUsuariosPage() {
         />
       ) : (
         <Card className="overflow-x-auto !p-0">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <table className="w-full text-left text-[13px]">
+            <thead className="border-b border-line-subtle bg-surface-sunken/60 text-[11px] uppercase tracking-[0.05em] text-ink-subtle">
               <tr>
-                <th className="px-4 py-3">Nome</th>
-                <th className="px-4 py-3">E-mail</th>
-                <th className="px-4 py-3">Perfil</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Ações</th>
+                <th className="px-4 py-3 font-medium">Nome</th>
+                <th className="px-4 py-3 font-medium">E-mail</th>
+                <th className="px-4 py-3 font-medium">Perfil</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 text-right font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u) => (
+              {filtered.map((u, i) => (
                 <tr
                   key={u.id}
-                  className="border-b border-slate-50 last:border-b-0 hover:bg-slate-50"
+                  className="border-b border-line-subtle last:border-b-0 transition-colors hover:bg-surface-sunken/60 animate-fade-in"
+                  style={{ animationDelay: `${Math.min(i * 20, 200)}ms` }}
                 >
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    {u.name}
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">{u.email}</td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 font-medium text-ink">{u.name}</td>
+                  <td className="px-4 py-3 text-ink-muted">{u.email}</td>
+                  <td className="px-4 py-3 text-ink-muted">
                     {ROLE_LABELS[u.role]}
                   </td>
                   <td className="px-4 py-3">
@@ -232,7 +233,7 @@ export default function AdminUsuariosPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="!text-red-600 hover:!bg-red-50"
+                          className="!text-accent-rose hover:!bg-accent-rose/10"
                           onClick={() =>
                             setConfirm({ user: u, target: "inativo" })
                           }
@@ -243,7 +244,7 @@ export default function AdminUsuariosPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="!text-emerald-700 hover:!bg-emerald-50"
+                          className="!text-accent-emerald hover:!bg-accent-emerald/10"
                           onClick={() =>
                             setConfirm({ user: u, target: "ativo" })
                           }

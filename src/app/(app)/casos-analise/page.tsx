@@ -131,11 +131,11 @@ export default function CasosAnalisePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">
+      <div className="animate-fade-in-down">
+        <h1 className="text-[28px] font-semibold tracking-[-0.025em] text-ink">
           Casos para Análise
         </h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-[14px] text-ink-muted">
           Atendimentos encaminhados para sua análise. Por padrão, casos
           finalizados e arquivados não aparecem.
         </p>
@@ -198,12 +198,12 @@ export default function CasosAnalisePage() {
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
           />
-          <label className="mt-6 inline-flex items-center gap-2 text-sm text-slate-700 md:col-span-2">
+          <label className="mt-6 inline-flex items-center gap-2 text-[13px] text-ink-muted md:col-span-2 cursor-pointer">
             <input
               type="checkbox"
               checked={includeFinished}
               onChange={(e) => setIncludeFinished(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+              className="h-4 w-4 rounded border-line text-brand focus:ring-brand transition"
             />
             Incluir casos finalizados / arquivados
           </label>
@@ -229,36 +229,37 @@ export default function CasosAnalisePage() {
         />
       ) : (
         <Card className="overflow-x-auto !p-0">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <table className="w-full text-left text-[13px]">
+            <thead className="border-b border-line-subtle bg-surface-sunken/60 text-[11px] uppercase tracking-[0.05em] text-ink-subtle">
               <tr>
-                <th className="px-4 py-3">Cliente</th>
-                <th className="px-4 py-3">Área jurídica</th>
-                <th className="px-4 py-3">Aluno</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Urgência</th>
-                <th className="px-4 py-3">Enviado em</th>
-                <th className="px-4 py-3 text-right">Ações</th>
+                <th className="px-4 py-3 font-medium">Cliente</th>
+                <th className="px-4 py-3 font-medium">Área jurídica</th>
+                <th className="px-4 py-3 font-medium">Aluno</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Urgência</th>
+                <th className="px-4 py-3 font-medium">Enviado em</th>
+                <th className="px-4 py-3 text-right font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {cases.map((c) => (
+              {cases.map((c, i) => (
                 <tr
                   key={c.id}
-                  className="border-b border-slate-50 last:border-b-0 hover:bg-slate-50"
+                  className="border-b border-line-subtle last:border-b-0 transition-colors hover:bg-surface-sunken/60 animate-fade-in"
+                  style={{ animationDelay: `${Math.min(i * 20, 200)}ms` }}
                 >
-                  <td className="px-4 py-3 font-medium text-slate-900">
+                  <td className="px-4 py-3 font-medium text-ink">
                     <Link
                       href={`/casos-analise/${c.id}`}
-                      className="hover:underline underline-offset-2"
+                      className="transition-colors hover:text-brand"
                     >
                       {c.client_name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 text-ink-muted">
                     {c.legal_area_name || "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 text-ink-muted">
                     {c.student_name || "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -267,12 +268,12 @@ export default function CasosAnalisePage() {
                   <td className="px-4 py-3">
                     <UrgencyBadge urgency={c.urgency} />
                   </td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 text-ink-muted">
                     {formatDateTimeBR(c.created_at)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/casos-analise/${c.id}`}>
-                      <Button size="sm">Analisar</Button>
+                      <Button size="sm" variant="brand">Analisar</Button>
                     </Link>
                   </td>
                 </tr>

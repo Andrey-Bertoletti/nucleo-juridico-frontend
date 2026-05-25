@@ -14,14 +14,22 @@ import {
 } from "@/types/attendance";
 
 const TONE_CLASSES: Record<BadgeTone, string> = {
-  slate: "bg-slate-100 text-slate-700",
-  blue: "bg-blue-50 text-blue-700",
-  amber: "bg-amber-50 text-amber-700",
-  emerald: "bg-emerald-50 text-emerald-700",
-  rose: "bg-rose-50 text-rose-700",
-  violet: "bg-violet-50 text-violet-700",
-  indigo: "bg-indigo-50 text-indigo-700",
-  neutral: "bg-slate-100 text-slate-600",
+  slate:
+    "bg-surface-sunken text-ink-muted border-line",
+  blue:
+    "bg-accent-blue/10 text-accent-blue border-accent-blue/20",
+  amber:
+    "bg-accent-amber/12 text-accent-amber border-accent-amber/25",
+  emerald:
+    "bg-accent-emerald/12 text-accent-emerald border-accent-emerald/25",
+  rose:
+    "bg-accent-rose/12 text-accent-rose border-accent-rose/25",
+  violet:
+    "bg-accent-violet/12 text-accent-violet border-accent-violet/25",
+  indigo:
+    "bg-accent-indigo/12 text-accent-indigo border-accent-indigo/25",
+  neutral:
+    "bg-surface-sunken text-ink-muted border-line",
 };
 
 interface StatusBadgeProps {
@@ -34,7 +42,8 @@ export function StatusBadge({ tone, children, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium tracking-[-0.005em]",
+        "transition-colors duration-200 ease-apple-snap",
         TONE_CLASSES[tone],
         className,
       )}
@@ -60,7 +69,15 @@ export function UrgencyBadge({ urgency }: { urgency: boolean }) {
   if (!urgency) {
     return <StatusBadge tone="slate">Normal</StatusBadge>;
   }
-  return <StatusBadge tone="rose">Urgente</StatusBadge>;
+  return (
+    <StatusBadge tone="rose">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-rose opacity-60" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-rose" />
+      </span>
+      Urgente
+    </StatusBadge>
+  );
 }
 
 export function AppointmentStatusBadge({

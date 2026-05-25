@@ -43,29 +43,36 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-fade-in"
       onClick={() => {
         if (!locked) onClose();
       }}
     >
       <div
+        aria-hidden
+        className="absolute inset-0 bg-surface-overlay/55 backdrop-blur-md"
+      />
+      <div
         role="dialog"
         aria-modal="true"
         className={cn(
-          "w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl",
+          "relative w-full max-w-lg rounded-2xl border border-line bg-surface-card shadow-apple-lg",
+          "animate-scale-in",
           className,
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <div className="border-b border-line-subtle px-6 py-4">
+          <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-ink">
+            {title}
+          </h2>
           {description && (
-            <p className="mt-1 text-sm text-slate-500">{description}</p>
+            <p className="mt-1 text-[13px] text-ink-muted">{description}</p>
           )}
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-6 py-5">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-line-subtle bg-surface-sunken/60 px-6 py-3 rounded-b-2xl">
             {footer}
           </div>
         )}

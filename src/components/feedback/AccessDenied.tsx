@@ -12,15 +12,15 @@ export function AccessDenied({
   message = "Você não tem permissão para acessar esta página.",
 }: AccessDeniedProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-slate-200 bg-white p-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+    <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-line bg-surface-card p-10 text-center shadow-apple-sm animate-fade-in-up">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-rose/12 text-accent-rose">
         <svg
           aria-hidden
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={2}
-          className="h-6 w-6"
+          strokeWidth={1.8}
+          className="h-7 w-7"
         >
           <path
             strokeLinecap="round"
@@ -30,8 +30,10 @@ export function AccessDenied({
         </svg>
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Acesso negado</h2>
-        <p className="mt-1 max-w-md text-sm text-slate-500">{message}</p>
+        <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-ink">
+          Acesso negado
+        </h2>
+        <p className="mt-1 max-w-md text-[13px] text-ink-muted">{message}</p>
       </div>
       <Link href="/dashboard">
         <Button variant="secondary">Voltar ao painel</Button>

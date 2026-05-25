@@ -29,14 +29,14 @@ const MONTHS = [
 ];
 
 const TONE_DOT: Record<string, string> = {
-  blue: "bg-blue-500",
-  indigo: "bg-indigo-500",
-  emerald: "bg-emerald-500",
-  rose: "bg-rose-500",
-  amber: "bg-amber-500",
-  neutral: "bg-slate-400",
-  slate: "bg-slate-400",
-  violet: "bg-violet-500",
+  blue: "bg-accent-blue",
+  indigo: "bg-accent-indigo",
+  emerald: "bg-accent-emerald",
+  rose: "bg-accent-rose",
+  amber: "bg-accent-amber",
+  neutral: "bg-ink/40",
+  slate: "bg-ink/40",
+  violet: "bg-accent-violet",
 };
 
 interface AppointmentsCalendarProps {
@@ -104,16 +104,16 @@ export function AppointmentsCalendar({
               Próximo mês →
             </Button>
           </div>
-          <h2 className="text-base font-semibold text-slate-900">
+          <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-ink">
             {MONTHS[month - 1]} de {year}
           </h2>
         </div>
 
-        <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200">
+        <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line">
           {WEEKDAYS.map((wd) => (
             <div
               key={wd}
-              className="bg-slate-50 px-2 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-500"
+              className="bg-surface-sunken px-2 py-2 text-center text-[10px] font-medium uppercase tracking-[0.05em] text-ink-subtle"
             >
               {wd}
             </div>
@@ -130,44 +130,44 @@ export function AppointmentsCalendar({
                 type="button"
                 onClick={() => setSelectedDay(iso)}
                 className={cn(
-                  "min-h-[96px] bg-white p-2 text-left transition-colors",
-                  !inMonth && "bg-slate-50/60 text-slate-400",
-                  isSelected && "ring-2 ring-inset ring-slate-900",
-                  !isSelected && "hover:bg-slate-50",
+                  "min-h-[96px] bg-surface-card p-2 text-left transition-all duration-200 ease-apple-snap",
+                  !inMonth && "bg-surface-sunken/60 text-ink-subtle",
+                  isSelected && "ring-2 ring-inset ring-brand bg-brand-soft/50",
+                  !isSelected && "hover:bg-surface-sunken/60",
                 )}
               >
                 <div className="flex items-center justify-between">
                   <span
                     className={cn(
-                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
+                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums",
                       isToday
-                        ? "bg-slate-900 text-white"
+                        ? "bg-brand text-white shadow-apple-sm"
                         : inMonth
-                          ? "text-slate-700"
-                          : "text-slate-400",
+                          ? "text-ink"
+                          : "text-ink-subtle",
                     )}
                   >
                     {cell.day}
                   </span>
                   {items.length > 0 && (
-                    <span className="text-[10px] font-medium text-slate-500">
+                    <span className="rounded-full bg-surface-sunken px-1.5 text-[10px] font-medium text-ink-muted">
                       {items.length}
                     </span>
                   )}
                 </div>
 
-                <ul className="mt-1 space-y-1">
+                <ul className="mt-1.5 space-y-1">
                   {items.slice(0, 3).map((it) => {
                     const tone = APPOINTMENT_STATUS_TONES[it.status];
                     return (
                       <li
                         key={it.id}
-                        className="flex items-center gap-1 truncate text-[11px] text-slate-700"
+                        className="flex items-center gap-1 truncate text-[11px] text-ink-muted"
                       >
                         <span
                           className={cn(
                             "h-1.5 w-1.5 shrink-0 rounded-full",
-                            TONE_DOT[tone] ?? "bg-slate-400",
+                            TONE_DOT[tone] ?? "bg-ink/40",
                           )}
                         />
                         <span className="truncate">
@@ -180,7 +180,7 @@ export function AppointmentsCalendar({
                     );
                   })}
                   {items.length > 3 && (
-                    <li className="text-[11px] font-medium text-slate-500">
+                    <li className="text-[11px] font-medium text-ink-subtle">
                       +{items.length - 3} mais
                     </li>
                   )}

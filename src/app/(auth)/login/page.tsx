@@ -37,17 +37,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-      <h2 className="text-center text-base font-semibold text-slate-900">
+    <div className="glass rounded-2xl px-7 py-8 shadow-apple-md">
+      <h2 className="text-center text-[17px] font-semibold tracking-[-0.01em] text-ink">
         Entrar no Sistema
       </h2>
-      <p className="mt-1 text-center text-xs text-slate-500">
+      <p className="mt-1 text-center text-[12px] text-ink-muted">
         Sistema interno do Núcleo de Práticas Jurídicas.
       </p>
 
       <form
         onSubmit={handleSubmit}
-        className="mt-5 flex flex-col gap-4"
+        className="mt-6 flex flex-col gap-4"
         noValidate
       >
         <Input
@@ -59,7 +59,6 @@ export default function LoginPage() {
           placeholder="seu.email@ites.edu.br"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="!bg-slate-50 !border-slate-200"
         />
         <Input
           label="Senha"
@@ -67,34 +66,40 @@ export default function LoginPage() {
           type="password"
           autoComplete="current-password"
           required
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="!bg-slate-50 !border-slate-200"
         />
 
         {error && (
-          <p
+          <div
             role="alert"
-            className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+            className="animate-fade-in rounded-xl border border-accent-rose/25 bg-accent-rose/10 px-3.5 py-2.5 text-[13px] text-accent-rose"
           >
             {error}
-          </p>
+          </div>
         )}
 
         <Link
           href="/forgot-password"
-          className="-mt-1 text-sm font-medium text-blue-600 hover:underline"
+          className="-mt-1 text-[13px] font-medium text-brand transition-colors hover:text-brand-hover"
         >
           Esqueci minha senha
         </Link>
 
-        <Button type="submit" isLoading={submitting} className="w-full">
+        <Button
+          type="submit"
+          isLoading={submitting}
+          variant="primary"
+          size="lg"
+          className="w-full"
+        >
           Entrar
         </Button>
 
-        <p className="mt-2 text-center text-xs text-slate-500">
-          O cadastro de novos usuários é feito pela coordenação do NPJ.
-          Se você ainda não tem acesso, procure a coordenação.
+        <p className="mt-1 text-center text-[11px] text-ink-subtle">
+          Para acessar o sistema, utilize suas credenciais fornecidas pela
+          coordenação do NPJ.
         </p>
       </form>
     </div>

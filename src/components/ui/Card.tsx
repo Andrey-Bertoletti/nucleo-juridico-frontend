@@ -6,6 +6,8 @@ interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   title?: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
+  /** Use the frosted-glass look (sidebar / floating panels). */
+  glass?: boolean;
 }
 
 export function Card({
@@ -14,29 +16,34 @@ export function Card({
   footer,
   className,
   children,
+  glass = false,
   ...rest
 }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-200 bg-white shadow-sm",
+        "rounded-2xl border border-line shadow-apple-sm",
+        "transition-all duration-300 ease-apple",
+        glass ? "glass" : "bg-surface-card",
         className,
       )}
       {...rest}
     >
       {(title || description) && (
-        <div className="border-b border-slate-100 p-4">
+        <div className="border-b border-line-subtle px-5 py-4">
           {title && (
-            <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+            <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
+              {title}
+            </h3>
           )}
           {description && (
-            <p className="mt-1 text-sm text-slate-500">{description}</p>
+            <p className="mt-1 text-[13px] text-ink-muted">{description}</p>
           )}
         </div>
       )}
-      <div className="p-4">{children}</div>
+      <div className="p-5">{children}</div>
       {footer && (
-        <div className="border-t border-slate-100 bg-slate-50 p-4">
+        <div className="flex items-center justify-end gap-2 border-t border-line-subtle bg-surface-sunken/60 px-5 py-3 rounded-b-2xl">
           {footer}
         </div>
       )}

@@ -108,10 +108,12 @@ export default function AgendaPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-in-down">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Agenda</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-[28px] font-semibold tracking-[-0.025em] text-ink">
+            Agenda
+          </h1>
+          <p className="text-[14px] text-ink-muted">
             Retornos do núcleo. Aluno vê os próprios; professor vê os
             atendimentos sob sua orientação; coordenação vê tudo.
           </p>
@@ -120,7 +122,7 @@ export default function AgendaPage() {
           <ViewToggle value={view} onChange={setView} />
           {canCreate && (
             <Link href="/agenda/novo">
-              <Button>Novo retorno</Button>
+              <Button variant="brand">+ Novo retorno</Button>
             </Link>
           )}
         </div>
@@ -198,15 +200,16 @@ function ViewToggle({
   onChange: (v: View) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+    <div className="flex gap-1 rounded-xl border border-line bg-surface-sunken p-1">
       <button
         type="button"
         onClick={() => onChange("list")}
         className={cn(
-          "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+          "rounded-lg px-3 py-1.5 text-[12px] font-medium tracking-[-0.005em]",
+          "transition-all duration-200 ease-apple-snap",
           value === "list"
-            ? "bg-white text-slate-900 shadow-sm"
-            : "text-slate-500 hover:text-slate-700",
+            ? "bg-surface-card text-ink shadow-apple-sm"
+            : "text-ink-muted hover:text-ink",
         )}
       >
         Lista
@@ -215,10 +218,11 @@ function ViewToggle({
         type="button"
         onClick={() => onChange("calendar")}
         className={cn(
-          "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+          "rounded-lg px-3 py-1.5 text-[12px] font-medium tracking-[-0.005em]",
+          "transition-all duration-200 ease-apple-snap",
           value === "calendar"
-            ? "bg-white text-slate-900 shadow-sm"
-            : "text-slate-500 hover:text-slate-700",
+            ? "bg-surface-card text-ink shadow-apple-sm"
+            : "text-ink-muted hover:text-ink",
         )}
       >
         Calendário
@@ -254,41 +258,42 @@ function ListView({
 
   return (
     <Card className="overflow-x-auto !p-0">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <table className="w-full text-left text-[13px]">
+        <thead className="border-b border-line-subtle bg-surface-sunken/60 text-[11px] uppercase tracking-[0.05em] text-ink-subtle">
           <tr>
-            <th className="px-4 py-3">Horário</th>
-            <th className="px-4 py-3">Cliente</th>
-            <th className="px-4 py-3">Motivo</th>
-            <th className="px-4 py-3">Atendimento</th>
-            <th className="px-4 py-3">Responsável</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Ações</th>
+            <th className="px-4 py-3 font-medium">Horário</th>
+            <th className="px-4 py-3 font-medium">Cliente</th>
+            <th className="px-4 py-3 font-medium">Motivo</th>
+            <th className="px-4 py-3 font-medium">Atendimento</th>
+            <th className="px-4 py-3 font-medium">Responsável</th>
+            <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 text-right font-medium">Ações</th>
           </tr>
         </thead>
         <tbody>
-          {items.map((it) => (
+          {items.map((it, i) => (
             <tr
               key={it.id}
-              className="border-b border-slate-50 last:border-b-0 hover:bg-slate-50"
+              className="border-b border-line-subtle last:border-b-0 transition-colors hover:bg-surface-sunken/60 animate-fade-in"
+              style={{ animationDelay: `${Math.min(i * 20, 200)}ms` }}
             >
-              <td className="px-4 py-3 font-medium text-slate-900">
+              <td className="px-4 py-3 font-semibold text-ink tabular-nums">
                 {it.appointment_time ? it.appointment_time.slice(0, 5) : "—"}
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 <Link
                   href={`/clientes/${it.client_id}`}
-                  className="hover:underline"
+                  className="transition-colors hover:text-brand"
                 >
                   {it.client_name}
                 </Link>
               </td>
-              <td className="px-4 py-3 text-slate-700">{it.reason || "—"}</td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">{it.reason || "—"}</td>
+              <td className="px-4 py-3 text-ink-muted">
                 {it.attendance_id ? (
                   <Link
                     href={`/atendimentos/${it.attendance_id}`}
-                    className="hover:underline"
+                    className="text-brand transition-colors hover:text-brand-hover"
                   >
                     Abrir atendimento
                   </Link>
@@ -296,7 +301,7 @@ function ListView({
                   "—"
                 )}
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {it.responsible_name || "—"}
               </td>
               <td className="px-4 py-3">

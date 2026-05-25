@@ -16,11 +16,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 ) {
   const inputId = id || rest.name;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {label && (
         <label
           htmlFor={inputId}
-          className="text-sm font-medium text-slate-700"
+          className="text-[13px] font-medium tracking-[-0.005em] text-ink"
         >
           {label}
         </label>
@@ -29,20 +29,25 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         id={inputId}
         ref={ref}
         className={cn(
-          "h-10 w-full rounded-md border bg-white px-3 text-sm text-slate-900",
-          "placeholder:text-slate-400",
-          "focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent",
-          "disabled:cursor-not-allowed disabled:bg-slate-50",
-          error ? "border-red-400" : "border-slate-300",
+          "h-11 w-full rounded-xl border bg-surface-sunken px-3.5 text-[14px] text-ink",
+          "placeholder:text-ink-subtle",
+          "transition-all duration-200 ease-apple-snap",
+          "focus:outline-none focus:border-brand focus:bg-surface-card focus:shadow-ring-brand",
+          "disabled:cursor-not-allowed disabled:opacity-60",
+          error
+            ? "border-accent-rose focus:border-accent-rose focus:shadow-[0_0_0_4px_rgb(var(--accent-rose)/0.25)]"
+            : "border-line",
           className,
         )}
         aria-invalid={error ? true : undefined}
         {...rest}
       />
       {error ? (
-        <span className="text-xs text-red-600">{error}</span>
+        <span className="animate-fade-in text-[12px] text-accent-rose">
+          {error}
+        </span>
       ) : hint ? (
-        <span className="text-xs text-slate-500">{hint}</span>
+        <span className="text-[12px] text-ink-subtle">{hint}</span>
       ) : null}
     </div>
   );

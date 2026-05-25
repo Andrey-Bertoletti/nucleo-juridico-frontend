@@ -64,18 +64,18 @@ export default function ClientesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-in-down">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="text-[28px] font-semibold tracking-[-0.025em] text-ink">
             Clientes / Assistidos
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-[14px] text-ink-muted">
             Cadastro centralizado dos assistidos do núcleo.
           </p>
         </div>
         {canCreate && (
           <Link href="/clientes/novo">
-            <Button>Novo cliente</Button>
+            <Button variant="brand">+ Novo cliente</Button>
           </Link>
         )}
       </div>
@@ -141,56 +141,57 @@ export default function ClientesPage() {
 function ClientsTable({ rows }: { rows: ClientListItem[] }) {
   return (
     <Card className="overflow-x-auto !p-0">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <table className="w-full text-left text-[13px]">
+        <thead className="border-b border-line-subtle bg-surface-sunken/60 text-[11px] uppercase tracking-[0.05em] text-ink-subtle">
           <tr>
-            <th className="px-4 py-3">Nome</th>
-            <th className="px-4 py-3">CPF</th>
-            <th className="px-4 py-3">Telefone</th>
-            <th className="px-4 py-3">Cidade</th>
-            <th className="px-4 py-3">Último atendimento</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Ações</th>
+            <th className="px-4 py-3 font-medium">Nome</th>
+            <th className="px-4 py-3 font-medium">CPF</th>
+            <th className="px-4 py-3 font-medium">Telefone</th>
+            <th className="px-4 py-3 font-medium">Cidade</th>
+            <th className="px-4 py-3 font-medium">Último atendimento</th>
+            <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 text-right font-medium">Ações</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((c) => (
+          {rows.map((c, i) => (
             <tr
               key={c.id}
-              className="border-b border-slate-50 last:border-b-0 hover:bg-slate-50"
+              className="border-b border-line-subtle last:border-b-0 transition-colors hover:bg-surface-sunken/60 animate-fade-in"
+              style={{ animationDelay: `${Math.min(i * 20, 200)}ms` }}
             >
-              <td className="px-4 py-3 font-medium text-slate-900">
+              <td className="px-4 py-3 font-medium text-ink">
                 <Link
                   href={`/clientes/${c.id}`}
-                  className="hover:underline underline-offset-2"
+                  className="transition-colors hover:text-brand"
                 >
                   {c.full_name}
                 </Link>
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {c.cpf ? maskCpf(c.cpf) : "—"}
               </td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">
                 {c.phone ? maskPhone(c.phone) : "—"}
               </td>
-              <td className="px-4 py-3 text-slate-700">{c.city || "—"}</td>
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-ink-muted">{c.city || "—"}</td>
+              <td className="px-4 py-3 text-ink-muted">
                 {formatDateBR(c.last_attendance_at)}
               </td>
               <td className="px-4 py-3">
                 <StatusBadge value={c.status} />
               </td>
               <td className="px-4 py-3 text-right">
-                <div className="inline-flex items-center gap-2">
+                <div className="inline-flex items-center gap-3">
                   <Link
                     href={`/clientes/${c.id}`}
-                    className="text-xs font-medium text-slate-700 hover:underline"
+                    className="text-[12px] font-medium text-brand transition-colors hover:text-brand-hover"
                   >
                     Ver
                   </Link>
                   <Link
                     href={`/clientes/${c.id}/editar`}
-                    className="text-xs font-medium text-slate-700 hover:underline"
+                    className="text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
                   >
                     Editar
                   </Link>
@@ -207,11 +208,11 @@ function ClientsTable({ rows }: { rows: ClientListItem[] }) {
 function StatusBadge({ value }: { value: keyof typeof CLIENT_STATUS_LABELS }) {
   const colors =
     value === "ativo"
-      ? "bg-emerald-50 text-emerald-700"
-      : "bg-slate-100 text-slate-600";
+      ? "bg-accent-emerald/12 text-accent-emerald border-accent-emerald/25"
+      : "bg-surface-sunken text-ink-muted border-line";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium tracking-[-0.005em] ${colors}`}
     >
       {CLIENT_STATUS_LABELS[value]}
     </span>

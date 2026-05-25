@@ -5,25 +5,17 @@ import { StatusBadge } from "@/components/feedback/StatusBadge";
 import { formatDateTimeBR } from "@/lib/format";
 
 export interface TimelineStatusTransition {
-  /** Texto humanizado do status anterior. */
   fromLabel: string;
-  /** Texto humanizado do novo status. */
   toLabel: string;
 }
 
 export interface TimelineEvent {
   id: string;
-  /** Título do evento ("Atendimento aberto", "Orientação registrada"...). */
   title: string;
-  /** ISO 8601 do momento do evento. */
   timestamp: string;
-  /** Quem realizou (opcional). */
   userName?: string | null;
-  /** Texto descritivo (frase humana). */
   description?: string | null;
-  /** Mudança de status visualizada com badges. */
   statusChange?: TimelineStatusTransition | null;
-  /** Conteúdo extra abaixo da descrição (chips, lista de mudanças, etc.). */
   extra?: ReactNode;
 }
 
@@ -42,39 +34,43 @@ export function Timeline({
     return (
       <Card>
         <div className="text-center">
-          <p className="text-sm font-semibold text-slate-900">{emptyTitle}</p>
-          <p className="mt-1 text-xs text-slate-500">{emptyDescription}</p>
+          <p className="text-[14px] font-semibold text-ink">{emptyTitle}</p>
+          <p className="mt-1 text-[12px] text-ink-muted">{emptyDescription}</p>
         </div>
       </Card>
     );
   }
 
   return (
-    <ol className="relative space-y-4 border-l-2 border-slate-200 pl-6">
-      {events.map((ev) => (
-        <li key={ev.id} className="relative">
+    <ol className="relative space-y-4 border-l-2 border-line pl-6">
+      {events.map((ev, i) => (
+        <li
+          key={ev.id}
+          className="relative animate-fade-in-up"
+          style={{ animationDelay: `${Math.min(i * 40, 240)}ms` }}
+        >
           <span
             aria-hidden
-            className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full bg-slate-900"
+            className="absolute -left-[31px] top-3 h-3 w-3 rounded-full bg-brand ring-4 ring-brand/15"
           />
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-900">
+              <h3 className="text-[14px] font-semibold tracking-[-0.005em] text-ink">
                 {ev.title}
               </h3>
-              <span className="text-xs text-slate-500">
+              <span className="text-[12px] text-ink-subtle">
                 {formatDateTimeBR(ev.timestamp)}
               </span>
             </div>
 
             {ev.userName && (
-              <p className="mt-1 text-xs text-slate-500">
-                Por <span className="font-medium text-slate-700">{ev.userName}</span>
+              <p className="mt-1 text-[12px] text-ink-subtle">
+                Por <span className="font-medium text-ink-muted">{ev.userName}</span>
               </p>
             )}
 
             {ev.statusChange && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-ink-muted">
                 <StatusBadge tone="neutral">
                   {ev.statusChange.fromLabel}
                 </StatusBadge>
@@ -86,7 +82,7 @@ export function Timeline({
             )}
 
             {ev.description && (
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+              <p className="mt-2 whitespace-pre-wrap text-[14px] text-ink-muted">
                 {ev.description}
               </p>
             )}

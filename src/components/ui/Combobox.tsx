@@ -19,15 +19,10 @@ export interface ComboboxProps<T> {
   disabled?: boolean;
   emptyMessage?: string;
 
-  /** Valor selecionado (chave). */
   value: string | null | undefined;
-  /** Lista completa de opções. */
   options: T[];
-  /** Extrai a chave única da opção. */
   getKey: (option: T) => string;
-  /** Texto principal exibido. */
   getLabel: (option: T) => string;
-  /** Texto secundário, exibido em uma segunda linha (opcional). */
   getDescription?: (option: T) => string | null | undefined;
 
   onChange: (key: string | null) => void;
@@ -72,7 +67,6 @@ export function Combobox<T>({
     });
   }, [search, options, getLabel, getDescription]);
 
-  // Click outside fecha
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (
@@ -86,12 +80,10 @@ export function Combobox<T>({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // Reset índice quando filtra
   useEffect(() => {
     setActiveIndex(0);
   }, [search]);
 
-  // Foco automático no input quando abre
   useEffect(() => {
     if (open) {
       const t = setTimeout(() => inputRef.current?.focus(), 0);
@@ -128,17 +120,17 @@ export function Combobox<T>({
   }
 
   return (
-    <div ref={containerRef} className="relative flex flex-col gap-1">
+    <div ref={containerRef} className="relative flex flex-col gap-1.5">
       {label && (
         <label
           htmlFor={`${id}-button`}
-          className="text-sm font-medium text-slate-700"
+          className="text-[13px] font-medium tracking-[-0.005em] text-ink"
         >
           {label}
         </label>
       )}
 
-      <div className="flex items-stretch gap-1">
+      <div className="flex items-stretch gap-1.5">
         <button
           id={`${id}-button`}
           type="button"
@@ -147,11 +139,12 @@ export function Combobox<T>({
           aria-haspopup="listbox"
           aria-expanded={open}
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border bg-white px-3 text-left text-sm",
-            "focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent",
-            "disabled:cursor-not-allowed disabled:bg-slate-50",
-            error ? "border-red-400" : "border-slate-300",
-            !selected && "text-slate-400",
+            "flex h-11 w-full items-center justify-between rounded-xl border bg-surface-sunken px-3.5 text-left text-[14px] text-ink",
+            "transition-all duration-200 ease-apple-snap",
+            "focus:outline-none focus:border-brand focus:bg-surface-card focus:shadow-ring-brand",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+            error ? "border-accent-rose" : "border-line",
+            !selected && "text-ink-subtle",
           )}
         >
           <span className="truncate">
@@ -161,7 +154,10 @@ export function Combobox<T>({
             aria-hidden
             viewBox="0 0 20 20"
             fill="currentColor"
-            className="h-4 w-4 text-slate-500"
+            className={cn(
+              "h-4 w-4 text-ink-subtle transition-transform duration-200 ease-apple-snap",
+              open && "rotate-180",
+            )}
           >
             <path
               fillRule="evenodd"
@@ -176,7 +172,7 @@ export function Combobox<T>({
             onClick={clear}
             title="Limpar seleção"
             aria-label="Limpar seleção"
-            className="rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-500 hover:bg-slate-50"
+            className="rounded-xl border border-line bg-surface-card px-2.5 text-sm text-ink-muted transition hover:bg-surface-sunken"
           >
             ×
           </button>
@@ -187,9 +183,9 @@ export function Combobox<T>({
         <div
           role="listbox"
           aria-labelledby={`${id}-button`}
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg"
+          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-hidden rounded-xl border border-line bg-surface-card shadow-apple-md animate-scale-in"
         >
-          <div className="border-b border-slate-100 p-2">
+          <div className="border-b border-line-subtle p-2">
             <input
               ref={inputRef}
               type="text"
@@ -197,12 +193,12 @@ export function Combobox<T>({
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={onKey}
               placeholder="Buscar..."
-              className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="h-9 w-full rounded-lg border border-line bg-surface-sunken px-3 text-[13px] text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand focus:shadow-ring-brand transition"
             />
           </div>
           <ul className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-slate-500">
+              <li className="px-3 py-2 text-[13px] text-ink-muted">
                 {emptyMessage}
               </li>
             ) : (
@@ -217,18 +213,34 @@ export function Combobox<T>({
                     aria-selected={isSelected}
                     onMouseEnter={() => setActiveIndex(idx)}
                     onMouseDown={(e) => {
-                      e.preventDefault(); // evita blur antes do click
+                      e.preventDefault();
                       commit(o);
                     }}
                     className={cn(
-                      "cursor-pointer px-3 py-2 text-sm",
-                      isActive && "bg-slate-100",
-                      isSelected && "font-medium text-slate-900",
+                      "mx-1 cursor-pointer rounded-lg px-3 py-2 text-[13px] transition-colors",
+                      isActive && "bg-surface-sunken",
+                      isSelected && "font-medium text-ink",
                     )}
                   >
-                    <div className="truncate">{getLabel(o)}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate">{getLabel(o)}</span>
+                      {isSelected && (
+                        <svg
+                          aria-hidden
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="h-4 w-4 text-brand"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.07 7.13a1 1 0 0 1-1.42 0L3.29 8.92a1 1 0 1 1 1.42-1.41l3.21 3.23 6.36-6.42a1 1 0 0 1 1.414-.03Z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
                     {getDescription?.(o) && (
-                      <div className="truncate text-xs text-slate-500">
+                      <div className="truncate text-xs text-ink-subtle">
                         {getDescription(o)}
                       </div>
                     )}
@@ -241,9 +253,11 @@ export function Combobox<T>({
       )}
 
       {error ? (
-        <span className="text-xs text-red-600">{error}</span>
+        <span className="animate-fade-in text-[12px] text-accent-rose">
+          {error}
+        </span>
       ) : hint ? (
-        <span className="text-xs text-slate-500">{hint}</span>
+        <span className="text-[12px] text-ink-subtle">{hint}</span>
       ) : null}
     </div>
   );

@@ -2,17 +2,321 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   Design tokens — inspired by Apple's macOS / iOS systems.
+   Values are RGB triplets so Tailwind utilities like
+   `bg-surface-card/80` work via the `<alpha-value>` placeholder.
+   ========================================================================= */
+:root {
+  /* Surfaces (light) */
+  --surface-base: 245 246 250;       /* page background — soft cool gray */
+  --surface-raised: 255 255 255;     /* nav bars, sidebars */
+  --surface-card: 255 255 255;       /* cards, modals */
+  --surface-sunken: 240 241 245;     /* inputs, sunken areas */
+  --surface-overlay: 17 17 22;       /* modal scrim */
+
+  /* Text (light) */
+  --text-primary: 15 17 26;          /* near-black */
+  --text-secondary: 86 92 110;
+  --text-tertiary: 138 143 160;
+  --text-inverted: 255 255 255;
+
+  /* Borders (light) */
+  --border-default: 222 225 233;
+  --border-strong: 198 202 213;
+  --border-subtle: 233 235 241;
+
+  /* Brand — Apple-style vivid blue */
+  --brand: 0 113 227;
+  --brand-hover: 0 95 200;
+  --brand-soft: 232 241 255;
+  --brand-ring: 0 113 227;
+
+  /* Accents (system) */
+  --accent-blue: 0 122 255;
+  --accent-indigo: 88 86 214;
+  --accent-amber: 255 159 10;
+  --accent-emerald: 52 199 89;
+  --accent-rose: 255 69 58;
+  --accent-violet: 175 82 222;
+
+  /* Effects */
+  --shadow-color: 15 23 42;
+  --glow-brand: 0 113 227;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* Surfaces (dark) — macOS dark mode inspired */
+  --surface-base: 18 18 22;
+  --surface-raised: 28 28 33;
+  --surface-card: 32 33 39;
+  --surface-sunken: 22 22 27;
+  --surface-overlay: 0 0 0;
+
+  /* Text (dark) */
+  --text-primary: 245 246 250;
+  --text-secondary: 173 178 192;
+  --text-tertiary: 122 127 142;
+  --text-inverted: 15 17 26;
+
+  /* Borders (dark) */
+  --border-default: 48 49 56;
+  --border-strong: 68 70 80;
+  --border-subtle: 40 41 47;
+
+  /* Brand (slightly brighter for dark) */
+  --brand: 10 132 255;
+  --brand-hover: 64 156 255;
+  --brand-soft: 23 47 89;
+  --brand-ring: 10 132 255;
+
+  --accent-blue: 10 132 255;
+  --accent-indigo: 94 92 230;
+  --accent-amber: 255 159 10;
+  --accent-emerald: 48 209 88;
+  --accent-rose: 255 69 58;
+  --accent-violet: 191 90 242;
+
+  --shadow-color: 0 0 0;
+  --glow-brand: 10 132 255;
+
+  color-scheme: dark;
+}
+
+/* =========================================================================
+   Base — typography & smooth theme switching
+   ========================================================================= */
 html,
 body {
   height: 100%;
-  background-color: #f8fafc; /* slate-50 */
-  color: #0f172a; /* slate-900 */
+  background-color: rgb(var(--surface-base));
+  color: rgb(var(--text-primary));
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.01em;
 }
 
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+    "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Smooth global transition when switching themes */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 350ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transition-delay: 0 !important;
+}
+
+/* Apple-style focus ring */
+*:focus-visible {
+  outline: none;
+}
+
+/* Better selection */
+::selection {
+  background: rgb(var(--brand) / 0.25);
+  color: rgb(var(--text-primary));
+}
+
+/* Scrollbar — subtle macOS feel */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-strong) / 0.6);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--border-strong) / 0.9);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* =========================================================================
+   Reusable component layer
+   ========================================================================= */
+@layer components {
+  /* Frosted-glass surface — Apple Vibrancy style */
+  .glass {
+    background-color: rgb(var(--surface-card) / 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 0.5px solid rgb(var(--border-default) / 0.6);
+  }
+
+  .glass-strong {
+    background-color: rgb(var(--surface-card) / 0.88);
+    backdrop-filter: saturate(180%) blur(28px);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base;
+  }
+
+  /* Pressable Apple-style interaction */
+  .pressable {
+    @apply transition duration-200 ease-apple-snap active:scale-[0.97];
+  }
+
+  /* Decorative auth background */
+  .auth-bg {
+    background:
+      radial-gradient(
+        1100px 540px at 12% -10%,
+        rgb(var(--brand) / 0.10),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 500px at 100% 110%,
+        rgb(var(--accent-indigo) / 0.10),
+        transparent 60%
+      ),
+      linear-gradient(
+        180deg,
+        rgb(var(--surface-base)) 0%,
+        rgb(var(--surface-base)) 100%
+      );
+  }
+}
+
+/* =========================================================================
+   Retrofit layer — map common Tailwind neutral utilities to tokens
+   so pages already authored against slate/white render correctly in
+   dark mode without per-file edits. Lower specificity than direct
+   dark: variants on primitives, so explicit choices still win.
+   ========================================================================= */
+.dark .bg-white {
+  background-color: rgb(var(--surface-card));
+}
+.dark .bg-slate-50 {
+  background-color: rgb(var(--surface-sunken));
+}
+.dark .bg-slate-100 {
+  background-color: rgb(var(--surface-sunken));
+}
+.dark .bg-slate-900 {
+  background-color: rgb(var(--text-primary));
+  color: rgb(var(--surface-card));
+}
+.dark .bg-slate-900\/50 {
+  background-color: rgb(0 0 0 / 0.6);
+}
+
+.dark .text-slate-900 {
+  color: rgb(var(--text-primary));
+}
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: rgb(var(--text-primary));
+}
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: rgb(var(--text-secondary));
+}
+.dark .text-slate-400 {
+  color: rgb(var(--text-tertiary));
+}
+.dark .text-white {
+  color: rgb(var(--text-inverted));
+}
+
+.dark .border-slate-200 {
+  border-color: rgb(var(--border-default));
+}
+.dark .border-slate-100 {
+  border-color: rgb(var(--border-subtle));
+}
+.dark .border-slate-300 {
+  border-color: rgb(var(--border-strong));
+}
+.dark .border-slate-200\/70 {
+  border-color: rgb(var(--border-default) / 0.7);
+}
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(var(--border-subtle));
+}
+
+/* Tone backgrounds (status badges, alerts) tuned for dark surface */
+.dark .bg-blue-50 { background-color: rgb(10 132 255 / 0.16); }
+.dark .bg-emerald-50 { background-color: rgb(48 209 88 / 0.16); }
+.dark .bg-amber-50 { background-color: rgb(255 159 10 / 0.18); }
+.dark .bg-rose-50 { background-color: rgb(255 69 58 / 0.16); }
+.dark .bg-red-50 { background-color: rgb(255 69 58 / 0.16); }
+.dark .bg-indigo-50 { background-color: rgb(94 92 230 / 0.18); }
+.dark .bg-violet-50 { background-color: rgb(191 90 242 / 0.18); }
+
+.dark .text-blue-700 { color: rgb(120 180 255); }
+.dark .text-blue-600 { color: rgb(120 180 255); }
+.dark .text-indigo-700 { color: rgb(166 164 255); }
+.dark .text-amber-700 { color: rgb(255 196 102); }
+.dark .text-emerald-700 { color: rgb(120 230 150); }
+.dark .text-rose-700 { color: rgb(255 138 130); }
+.dark .text-red-700 { color: rgb(255 138 130); }
+.dark .text-red-600 { color: rgb(255 138 130); }
+.dark .text-violet-700 { color: rgb(212 154 255); }
+
+.dark .border-blue-200 { border-color: rgb(10 132 255 / 0.35); }
+.dark .border-amber-200 { border-color: rgb(255 159 10 / 0.35); }
+.dark .border-emerald-200 { border-color: rgb(48 209 88 / 0.35); }
+.dark .border-rose-200 { border-color: rgb(255 69 58 / 0.35); }
+.dark .border-indigo-200 { border-color: rgb(94 92 230 / 0.35); }
+
+/* Gradients used on auth page */
+.dark .from-slate-50,
+.dark .from-slate-50\/60 { --tw-gradient-from: rgb(var(--surface-base)) var(--tw-gradient-from-position); }
+.dark .via-white { --tw-gradient-via: rgb(var(--surface-raised)) var(--tw-gradient-via-position); }
+.dark .to-blue-50\/60 { --tw-gradient-to: rgb(10 132 255 / 0.06) var(--tw-gradient-to-position); }
+
+/* Soft shadows that look right against dark surfaces */
+.dark .shadow-sm,
+.dark .shadow {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 0.05),
+    0 1px 2px rgb(0 0 0 / 0.5);
+}
+.dark .shadow-md {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 0.05),
+    0 6px 16px rgb(0 0 0 / 0.45);
+}
+.dark .shadow-lg {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 0.06),
+    0 16px 36px rgb(0 0 0 / 0.55);
+}
+.dark .shadow-xl {
+  box-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 0.06),
+    0 24px 60px rgb(0 0 0 / 0.6);
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

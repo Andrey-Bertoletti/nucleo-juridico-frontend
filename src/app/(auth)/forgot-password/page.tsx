@@ -5,19 +5,34 @@ import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { forgotPassword } from "@/services/auth";
 
 /**
- * Recuperação de senha — UI inicial. O endpoint correspondente ainda não foi
- * implementado no backend; quando estiver pronto, basta chamar
- * `POST /auth/forgot-password` aqui.
+ * Recuperação de senha — chama o backend, que delega ao Supabase. A resposta
+ * exibida ao usuário é SEMPRE genérica (mesmo quando o e-mail não existe)
+ * para evitar enumeração de contas.
  */
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      const redirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/login`
+          : undefined;
+      await forgotPassword(email, redirectTo);
+    } catch {
+      // Best-effort: mesmo em falha de rede mostramos mensagem genérica
+      // (não revela se o e-mail existe ou não).
+    } finally {
+      setSubmitting(false);
+      setSubmitted(true);
+    }
   }
 
   return (
@@ -57,7 +72,13 @@ export default function ForgotPasswordPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <Button type="submit" variant="primary" size="lg" className="w-full">
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            isLoading={submitting}
+            className="w-full"
+          >
             Enviar instruções
           </Button>
           <Link

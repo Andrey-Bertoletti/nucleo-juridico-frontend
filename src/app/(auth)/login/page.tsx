@@ -25,77 +25,105 @@ export default function LoginPage() {
 
   // Trata o retorno do OAuth: Supabase devolve para /login?code=...
   // O cliente Supabase (detectSessionInUrl: true) faz o exchange sozinho;
-  // aqui só esperamos o evento SIGNED_IN, pegamos a sessão e completamos
+  // aqui só esperamos a sessão materializar, pegamos os tokens e completamos
   // o login no backend chamando /auth/me com o access_token do Google.
   useEffect(() => {
-    const hasCode =
-      searchParams.get("code") !== null ||
-      searchParams.get("error") !== null;
-
+    const hasCode = searchParams.get("code") !== null;
     // Erro vindo do provedor (usuário cancelou no Google, escopo recusado...)
     const oauthError = searchParams.get("error_description") || searchParams.get("error");
     if (oauthError) {
       setError(decodeURIComponent(oauthError));
+      // Limpa o ?error= da URL para não re-disparar este effect em rerenders.
+      router.replace("/login");
       return;
     }
 
     if (!hasCode) return;
 
     setExchangingOAuth(true);
+    let active = true;
 
-    let cancelled = false;
+    /** Finaliza o fluxo OAuth — desliga spinner SEM esperar o signOut e
+     * limpa o ?code= da URL para evitar reentrada do effect. */
+    const finishWithError = (message: string) => {
+      if (!active) return;
+      setError(message);
+      setExchangingOAuth(false);
+      // signOut em background — não bloqueia a UI; falha de rede aqui
+      // não pode segurar o spinner ligado.
+      void supabase.auth.signOut().catch(() => {});
+      router.replace("/login");
+    };
+
+    const handleSession = async (session: {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    }) => {
+      try {
+        await loginWithTokens({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresIn: session.expires_in,
+        });
+        if (!active) return;
+        router.replace("/dashboard");
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          // Backend já apagou o auth.users criado pelo Supabase OAuth.
+          finishWithError(
+            "Você ainda não foi cadastrado no sistema. " +
+              "Entre em contato com a coordenação do NPJ para solicitar acesso.",
+          );
+        } else {
+          finishWithError(
+            err instanceof ApiError
+              ? err.detail
+              : "Não foi possível concluir o login com Google.",
+          );
+        }
+      }
+    };
+
+    // Caminho A: o exchange já completou antes deste effect montar
+    // (acontece com frequência — `detectSessionInUrl: true` é síncrono em
+    // muitas versões do supabase-js). Nesse caso, getSession() já tem a sessão.
+    let handled = false;
+    void supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!active || handled || !session) return;
+        handled = true;
+        void handleSession(session);
+      })
+      .catch(() => {
+        // Ignora — o caminho B (onAuthStateChange) ainda pode resolver.
+      });
+
+    // Caminho B: o exchange ainda está em andamento; ouvimos SIGNED_IN.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (cancelled || !session) return;
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active || handled || !session) return;
       if (event === "SIGNED_IN") {
-        try {
-          await loginWithTokens({
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-            expiresIn: session.expires_in,
-          });
-          router.replace("/dashboard");
-        } catch (err) {
-          // Mensagem específica para o caso comum: Google funcionou,
-          // mas o profile no backend não existe → cadastro ainda não foi
-          // feito pelo admin OU o user_id do auth.users novo (criado pelo
-          // Google) não bate com nenhum profile pré-existente.
-          if (err instanceof ApiError && err.status === 404) {
-            // Backend já apagou o auth.users criado pelo Supabase OAuth, então
-            // não fica usuário órfão. Aqui só sinalizamos para o usuário.
-            setError(
-              "Você ainda não foi cadastrado no sistema. " +
-                "Entre em contato com a coordenação do NPJ para solicitar acesso.",
-            );
-          } else {
-            setError(
-              err instanceof ApiError
-                ? err.detail
-                : "Não foi possível concluir o login com Google.",
-            );
-          }
-          // Garante que ficamos deslogados no Supabase também (evita laço).
-          await supabase.auth.signOut();
-        } finally {
-          setExchangingOAuth(false);
-        }
+        handled = true;
+        void handleSession(session);
       }
     });
 
-    // Fallback: já existe uma sessão (recarregou a página depois do exchange).
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (cancelled || !session) return;
-      // O onAuthStateChange acima vai tratar — apenas garantimos que o
-      // spinner não fique pendurado se o evento já passou.
-      setTimeout(() => {
-        if (!cancelled) setExchangingOAuth(false);
-      }, 200);
-    });
+    // Salvaguarda: se nada resolver em 10 s, libera a UI com mensagem.
+    const timeout = setTimeout(() => {
+      if (!active || handled) return;
+      handled = true;
+      finishWithError(
+        "O login com Google demorou demais. Recarregue a página e tente novamente.",
+      );
+    }, 10_000);
 
     return () => {
-      cancelled = true;
+      active = false;
       subscription.unsubscribe();
+      clearTimeout(timeout);
     };
   }, [searchParams, loginWithTokens, router]);
 

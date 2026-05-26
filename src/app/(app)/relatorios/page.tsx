@@ -25,6 +25,8 @@ import {
   getReportsByStudent,
   getReportsByTeacher,
   getReportsSummary,
+  exportReportPDF,
+  exportReportExcel,
 } from "@/services/reports";
 import { ATTENDANCE_STATUS_TONES } from "@/types/attendance";
 import type {
@@ -70,6 +72,9 @@ export default function RelatoriosPage() {
   const [byTeacher, setByTeacher] = useState<ProductivityRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([listLegalAreas(), listStudents(), listTeachers()])
@@ -168,10 +173,55 @@ export default function RelatoriosPage() {
     tone: "blue",
   }));
 
-  function exportPlaceholder(kind: "PDF" | "Excel") {
-    window.alert(
-      `Exportar ${kind}: funcionalidade ainda não implementada. Será habilitada em uma próxima entrega.`,
-    );
+  function buildExportFilters() {
+    return {
+      from: from || undefined,
+      to: to || undefined,
+      legal_area_id: legalAreaId || undefined,
+      student_id: studentId || undefined,
+      teacher_id: teacherId || undefined,
+    };
+  }
+
+  function triggerDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function todayISO() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  async function handleExportPDF() {
+    setExportingPdf(true);
+    setExportError(null);
+    try {
+      const blob = await exportReportPDF(buildExportFilters());
+      triggerDownload(blob, `relatorio_nucleo_juridico_${todayISO()}.pdf`);
+    } catch {
+      setExportError("Erro ao exportar PDF. Tente novamente.");
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
+  async function handleExportExcel() {
+    setExportingExcel(true);
+    setExportError(null);
+    try {
+      const blob = await exportReportExcel(buildExportFilters());
+      triggerDownload(blob, `relatorio_nucleo_juridico_${todayISO()}.xlsx`);
+    } catch {
+      setExportError("Erro ao exportar Excel. Tente novamente.");
+    } finally {
+      setExportingExcel(false);
+    }
   }
 
   return (
@@ -188,19 +238,29 @@ export default function RelatoriosPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => exportPlaceholder("PDF")}
+            onClick={handleExportPDF}
+            isLoading={exportingPdf}
+            disabled={exportingPdf || exportingExcel}
           >
             Exportar PDF
           </Button>
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => exportPlaceholder("Excel")}
+            onClick={handleExportExcel}
+            isLoading={exportingExcel}
+            disabled={exportingPdf || exportingExcel}
           >
             Exportar Excel
           </Button>
         </div>
       </div>
+
+      {exportError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] text-red-700 animate-fade-in">
+          {exportError}
+        </div>
+      )}
 
       <Card>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-6">

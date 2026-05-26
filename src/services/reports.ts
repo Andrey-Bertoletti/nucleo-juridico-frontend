@@ -1,4 +1,4 @@
-import { apiFetch } from "@/services/api";
+import { apiFetch, ApiError, getStoredToken } from "@/services/api";
 import type {
   AreaCount,
   DashboardResponse,
@@ -72,4 +72,53 @@ export function getPendingDocuments(): Promise<PendingAttendance[]> {
 
 export function getPendingTeacherAnalysis(): Promise<PendingAttendance[]> {
   return apiFetch<PendingAttendance[]>("/reports/pending-teacher-analysis");
+}
+
+// ---------------------------------------------------------------------------
+// Export helpers — binary downloads (apiFetch always parses JSON, so we use
+// a direct fetch with the stored auth token instead)
+// ---------------------------------------------------------------------------
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+export async function exportReportPDF(
+  filters: ReportFilters = {},
+): Promise<Blob> {
+  const token = getStoredToken();
+  const res = await fetch(
+    `${API_BASE}/reports/export/pdf${toQuery(filters)}`,
+    {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+  if (!res.ok) {
+    const detail = await res
+      .text()
+      .catch(() => res.statusText);
+    throw new ApiError(res.status, detail || "Erro ao exportar PDF.");
+  }
+  return res.blob();
+}
+
+export async function exportReportExcel(
+  filters: ReportFilters = {},
+): Promise<Blob> {
+  const token = getStoredToken();
+  const res = await fetch(
+    `${API_BASE}/reports/export/excel${toQuery(filters)}`,
+    {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+  if (!res.ok) {
+    const detail = await res
+      .text()
+      .catch(() => res.statusText);
+    throw new ApiError(res.status, detail || "Erro ao exportar Excel.");
+  }
+  return res.blob();
 }

@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
     try {
       const redirectTo =
         typeof window !== "undefined"
-          ? `${window.location.origin}/login`
+          ? `${window.location.origin}/reset-password`
           : undefined;
       await forgotPassword(email, redirectTo);
     } catch {

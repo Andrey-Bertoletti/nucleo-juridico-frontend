@@ -25,6 +25,12 @@ const CARDS = [
     description:
       "Gerenciar os tipos de demanda associados a cada área jurídica.",
   },
+  {
+    href: "/admin/modelos",
+    title: "Modelos do sistema",
+    description:
+      "Cadastrar modelos de relatório, atendimento e documento para geração padronizada e impressão para assinatura.",
+  },
 ];
 
 export default function AdministracaoPage() {

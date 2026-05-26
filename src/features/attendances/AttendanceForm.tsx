@@ -7,6 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Combobox } from "@/components/ui/Combobox";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { maskCpf } from "@/lib/format";
@@ -52,6 +53,8 @@ export function AttendanceForm({
       description: "",
       notes: "",
       urgency: false,
+      responsible_student_name: "",
+      responsible_student_matricula: "",
       ...defaultValues,
     },
   });
@@ -234,6 +237,28 @@ export function AttendanceForm({
                 Marcar como urgente
               </label>
             )}
+          />
+        </div>
+      </Card>
+
+      <Card
+        title="Identificação do aluno responsável *"
+        description="O login de aluno é compartilhado entre estagiários. Por isso, todo atendimento precisa identificar manualmente quem o conduziu — esses dados serão exibidos também nas versões impressas."
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <Input
+              label="Nome completo do aluno *"
+              placeholder="Ex.: Maria Souza Silva"
+              {...register("responsible_student_name")}
+              error={errors.responsible_student_name?.message}
+            />
+          </div>
+          <Input
+            label="Matrícula *"
+            placeholder="Ex.: 20231234"
+            {...register("responsible_student_matricula")}
+            error={errors.responsible_student_matricula?.message}
           />
         </div>
       </Card>

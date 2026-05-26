@@ -21,6 +21,7 @@ const MENU: MenuItem[] = [
   { label: "Atendimentos", href: "/atendimentos", icon: IconFolder },
   { label: "Agenda", href: "/agenda", icon: IconCalendar },
   { label: "Documentos", href: "/documentos", icon: IconDoc },
+  { label: "Modelos", href: "/modelos", icon: IconDoc },
   {
     label: "Casos para Análise",
     href: "/casos-analise",

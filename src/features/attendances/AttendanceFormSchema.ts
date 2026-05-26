@@ -24,6 +24,18 @@ export const attendanceFormSchema = z.object({
   description: optionalText(4000),
   notes: optionalText(4000),
   urgency: z.boolean().optional().transform((v) => Boolean(v)),
+  // Identificação manual do aluno responsável — obrigatória porque o login
+  // de aluno é compartilhado entre estagiários no NPJ.
+  responsible_student_name: z
+    .string({ required_error: "Informe o nome do aluno responsável." })
+    .trim()
+    .min(2, "Informe o nome completo do aluno responsável.")
+    .max(200),
+  responsible_student_matricula: z
+    .string({ required_error: "Informe a matrícula do aluno." })
+    .trim()
+    .min(1, "Informe a matrícula do aluno.")
+    .max(50),
 });
 
 export type AttendanceFormInput = z.input<typeof attendanceFormSchema>;

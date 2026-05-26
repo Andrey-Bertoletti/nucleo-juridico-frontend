@@ -32,10 +32,24 @@ export default function LoginPage() {
   // o login no backend chamando /auth/me com o access_token do Google.
   useEffect(() => {
     const hasCode = searchParams.get("code") !== null;
-    // Erro vindo do provedor (usuário cancelou no Google, escopo recusado...)
-    const oauthError = searchParams.get("error_description") || searchParams.get("error");
+    // Erro vindo do provedor (usuário cancelou no Google, escopo recusado, OU
+    // Supabase rejeitou signup do OAuth quando "Disable signups" está ligado).
+    const oauthErrorDescription = searchParams.get("error_description");
+    const oauthErrorRaw = searchParams.get("error");
+    const oauthError = oauthErrorDescription || oauthErrorRaw;
     if (oauthError) {
-      setError(decodeURIComponent(oauthError));
+      const decoded = decodeURIComponent(oauthError);
+      // "Signups not allowed" / "User not allowed" / "access_denied" do
+      // Supabase indicam que o usuário tentou login com Google mas a conta
+      // dele não existe e o auto-signup está bloqueado — mensagem amigável.
+      const looksLikeBlockedSignup =
+        /signup|sign-up|not allowed|access_denied|user not allowed/i.test(decoded) ||
+        /signup|access_denied/i.test(oauthErrorRaw ?? "");
+      setError(
+        looksLikeBlockedSignup
+          ? "Você ainda não foi cadastrado no sistema. Entre em contato com a coordenação do NPJ para solicitar acesso."
+          : decoded,
+      );
       // Limpa o ?error= da URL para não re-disparar este effect em rerenders.
       router.replace("/login");
       return;

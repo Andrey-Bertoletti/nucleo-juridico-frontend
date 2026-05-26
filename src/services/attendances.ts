@@ -49,6 +49,9 @@ export interface AttendancePayload {
   description?: string | null;
   notes?: string | null;
   urgency?: boolean;
+  /** Identificação manual do aluno responsável (login compartilhado). */
+  responsible_student_name?: string | null;
+  responsible_student_matricula?: string | null;
 }
 
 export function createAttendance(

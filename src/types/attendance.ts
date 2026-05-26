@@ -36,6 +36,10 @@ export interface Attendance {
   notes: string | null;
   urgency: boolean;
   status: AttendanceStatus;
+  /** Identificação manual do aluno responsável — necessária porque o login
+   * de aluno é compartilhado entre estagiários. */
+  responsible_student_name: string | null;
+  responsible_student_matricula: string | null;
   created_at: string;
   updated_at: string;
   finished_at: string | null;

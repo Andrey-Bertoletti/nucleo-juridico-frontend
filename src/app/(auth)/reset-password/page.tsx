@@ -8,17 +8,36 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { supabase } from "@/lib/supabase";
 
-/** Lê erros que o Supabase devolve no hash (#error=...) ou na query (?error=...). */
-function readUrlError(): string | null {
-  if (typeof window === "undefined") return null;
+type UrlAuthInfo = {
+  error: string | null;
+  errorCode: string | null;
+  errorDescription: string | null;
+  hasCode: boolean;
+};
+
+/** Lê erros e parâmetros que o Supabase devolve no hash (#...) ou na query (?...). */
+function readUrlAuthInfo(): UrlAuthInfo {
+  if (typeof window === "undefined") {
+    return { error: null, errorCode: null, errorDescription: null, hasCode: false };
+  }
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const query = new URLSearchParams(window.location.search);
-  return (
-    hash.get("error_description") ||
-    hash.get("error") ||
-    query.get("error_description") ||
-    query.get("error")
-  );
+  const pick = (key: string) => hash.get(key) ?? query.get(key);
+  return {
+    error: pick("error"),
+    errorCode: pick("error_code"),
+    errorDescription: pick("error_description"),
+    hasCode: query.get("code") !== null,
+  };
+}
+
+/** Heurística: erros com `error_code=otp_expired` ou `error_code` começando
+ * com "token_" vêm do fluxo de recovery (link expirado). Tudo o mais (incluindo
+ * `access_denied`, `server_error`, `signup_disabled`, ou sem `error_code`)
+ * indica callback OAuth que caiu aqui por engano — devolver pro /login. */
+function looksLikeRecoveryError(errorCode: string | null): boolean {
+  if (!errorCode) return false;
+  return errorCode === "otp_expired" || errorCode.startsWith("token_");
 }
 
 export default function ResetPasswordPage() {
@@ -44,11 +63,28 @@ export default function ResetPasswordPage() {
       return Boolean(provider && provider !== "email");
     };
 
-    // 1. Erro explícito na URL (link expirado, otp_expired etc.) → mostra
-    //    direto a tela "solicite novo link", sem esperar timeout.
-    const urlError = readUrlError();
-    if (urlError) {
-      setExpired(true);
+    // 1. Erro explícito na URL. Pode ser:
+    //    (a) recovery link expirado (`error_code=otp_expired`) → mostra
+    //        "Solicite um novo link" direto.
+    //    (b) erro de OAuth (Google) que caiu aqui porque o Supabase Dashboard
+    //        tem o Site URL apontando pra /reset-password — nesse caso o
+    //        usuário ia clicar "Solicitar novo link" sem entender o problema.
+    //        Devolvemos pra /login carregando o `error_description` para a
+    //        tela de login mostrar a mensagem correta.
+    const urlInfo = readUrlAuthInfo();
+    if (urlInfo.error || urlInfo.errorDescription) {
+      // Log para diagnóstico (Supabase Dashboard config errada).
+      console.warn("[reset-password] erro na URL:", urlInfo);
+      if (looksLikeRecoveryError(urlInfo.errorCode)) {
+        setExpired(true);
+        return;
+      }
+      // OAuth ou erro genérico — manda pro /login preservando o erro.
+      const target = new URL("/login", window.location.origin);
+      if (urlInfo.error) target.searchParams.set("error", urlInfo.error);
+      if (urlInfo.errorDescription)
+        target.searchParams.set("error_description", urlInfo.errorDescription);
+      router.replace(target.pathname + target.search);
       return;
     }
 
@@ -93,11 +129,25 @@ export default function ResetPasswordPage() {
     });
 
     // 4. Timeout de fallback: 8s costuma bastar para o exchange terminar
-    //    mesmo em redes ruins. Se ainda não estiver pronto, assume expirado.
+    //    mesmo em redes ruins. Se nada resolveu, decidimos pelo conteúdo da
+    //    URL: havia `?code=` mas nunca virou sessão → provavelmente é um
+    //    callback OAuth que caiu aqui por engano (e perdeu o code_verifier).
+    //    Mandar pro /login dá ao usuário a chance de tentar de novo, em vez
+    //    de mostrar "link expirado" enganoso.
     const timeout = setTimeout(() => {
       if (cancelled) return;
       setReady((current) => {
-        if (!current) setExpired(true);
+        if (current) return current;
+        if (urlInfo.hasCode) {
+          console.warn(
+            "[reset-password] timeout sem SIGNED_IN com ?code= na URL — " +
+              "callback OAuth provável caindo aqui em vez de /login. " +
+              "Verifique Supabase Dashboard → Authentication → URL Configuration.",
+          );
+          router.replace("/login");
+        } else {
+          setExpired(true);
+        }
         return current;
       });
     }, 8000);

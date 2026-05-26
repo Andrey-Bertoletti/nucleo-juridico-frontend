@@ -2,27 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { createClient } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-
-// `flowType: "pkce"` casa com o default do supabase-js v2.45+, que é o que
-// o backend (`reset_password_for_email`) emite. `detectSessionInUrl: true`
-// faz o cliente já extrair `?code=` da URL automaticamente quando o módulo
-// carrega — não precisamos chamar `exchangeCodeForSession` manualmente.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      flowType: "pkce",
-      detectSessionInUrl: true,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  },
-);
+import { supabase } from "@/lib/supabase";
 
 /** Lê erros que o Supabase devolve no hash (#error=...) ou na query (?error=...). */
 function readUrlError(): string | null {

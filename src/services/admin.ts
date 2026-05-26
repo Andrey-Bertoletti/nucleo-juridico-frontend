@@ -12,7 +12,8 @@ export function listUsers(): Promise<User[]> {
 export interface UserCreatePayload {
   name: string;
   email: string;
-  password: string;
+  /** Opcional: quando ausente, o backend só envia o convite por e-mail. */
+  password?: string;
   role: Role;
 }
 

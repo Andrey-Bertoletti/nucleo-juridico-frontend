@@ -24,6 +24,17 @@ export interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /**
+   * Aceita um par de tokens já obtido (ex.: vindo do Supabase OAuth com Google)
+   * e completa o login carregando o profile via `/auth/me`. Lança ApiError se
+   * o profile não existir — esse caminho preserva a regra "cadastro só pelo
+   * admin", evitando self-signup via OAuth.
+   */
+  loginWithTokens: (input: {
+    accessToken: string;
+    refreshToken?: string | null;
+    expiresIn?: number | null;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
@@ -127,6 +138,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [scheduleRefresh],
   );
 
+  const loginWithTokens = useCallback(
+    async (input: {
+      accessToken: string;
+      refreshToken?: string | null;
+      expiresIn?: number | null;
+    }) => {
+      // Armazena ANTES de chamar /auth/me — o apiFetch lê do localStorage
+      // para montar o Authorization header.
+      storeCredentials({
+        accessToken: input.accessToken,
+        refreshToken: input.refreshToken ?? undefined,
+        expiresIn: input.expiresIn ?? undefined,
+      });
+      try {
+        const me = await authService.getMe();
+        setUser(me);
+        scheduleRefresh();
+      } catch (err) {
+        // Profile não existe (ex.: usuário entrou com Google mas não foi
+        // cadastrado pelo admin). Limpa tudo e propaga — o caller decide
+        // como sinalizar para o usuário.
+        clearToken();
+        setUser(null);
+        throw err;
+      }
+    },
+    [scheduleRefresh],
+  );
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -151,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, refreshUser, hasRole }}
+      value={{ user, loading, login, loginWithTokens, logout, refreshUser, hasRole }}
     >
       {children}
     </AuthContext.Provider>

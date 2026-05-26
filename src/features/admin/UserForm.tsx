@@ -67,8 +67,11 @@ export function UserForm({
       setLocalError("Informe o e-mail.");
       return;
     }
-    if (mode === "create" && password.length < 8) {
-      setLocalError("A senha deve ter pelo menos 8 caracteres.");
+    // Senha provisória é opcional. Quando o admin a deixa em branco, o
+    // backend usa apenas o convite por e-mail — o usuário define a própria
+    // senha pelo link. Se informada, exige tamanho mínimo.
+    if (mode === "create" && password && password.length < 8) {
+      setLocalError("A senha provisória deve ter pelo menos 8 caracteres ou ser deixada em branco.");
       return;
     }
 
@@ -77,7 +80,7 @@ export function UserForm({
       await onSubmit({
         name: name.trim(),
         email: email.trim(),
-        password: mode === "create" ? password : undefined,
+        password: mode === "create" && password ? password : undefined,
         role,
       });
     } finally {
@@ -104,15 +107,22 @@ export function UserForm({
           required
         />
         {mode === "create" && (
-          <Input
-            label="Senha provisória *"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            hint="Mínimo de 8 caracteres. O usuário poderá trocar depois."
-            autoComplete="new-password"
-            required
-          />
+          <>
+            <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-[13px] text-blue-900">
+              Um e-mail de confirmação será enviado ao novo usuário com um link
+              para definir a própria senha. A senha provisória abaixo é{" "}
+              <strong>opcional</strong> — só informe se quiser combinar uma
+              senha temporária por outro canal.
+            </div>
+            <Input
+              label="Senha provisória (opcional)"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              hint="Mínimo de 8 caracteres. Deixe em branco para que o usuário defina pelo link do e-mail."
+              autoComplete="new-password"
+            />
+          </>
         )}
         <Select
           label="Perfil *"

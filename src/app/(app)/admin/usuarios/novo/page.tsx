@@ -26,7 +26,7 @@ export default function NovoUsuarioPage() {
       await createUser({
         name: values.name,
         email: values.email,
-        password: values.password!,
+        password: values.password,
         role: values.role,
       });
       router.push("/admin/usuarios");

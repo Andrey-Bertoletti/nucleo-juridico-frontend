@@ -62,9 +62,11 @@ export default function LoginPage() {
           // feito pelo admin OU o user_id do auth.users novo (criado pelo
           // Google) não bate com nenhum profile pré-existente.
           if (err instanceof ApiError && err.status === 404) {
+            // Backend já apagou o auth.users criado pelo Supabase OAuth, então
+            // não fica usuário órfão. Aqui só sinalizamos para o usuário.
             setError(
-              "Sua conta do Google não está vinculada ao sistema. " +
-                "Peça à coordenação para cadastrá-lo com este e-mail.",
+              "Você ainda não foi cadastrado no sistema. " +
+                "Entre em contato com a coordenação do NPJ para solicitar acesso.",
             );
           } else {
             setError(

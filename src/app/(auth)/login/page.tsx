@@ -23,7 +23,10 @@ export default function LoginPage() {
   /** OAuth pode levar ~1s entre o redirect e o /auth/me — exibe spinner. */
   const [exchangingOAuth, setExchangingOAuth] = useState(false);
 
-  // Trata o retorno do OAuth: Supabase devolve para /login?code=...
+  // Trata o retorno do OAuth: Supabase devolve para /login?code=... (ou para
+  // /reset-password se a URL Configuration do Supabase estiver errada — nesse
+  // caso a reset-password redireciona pra cá depois de detectar a sessão
+  // OAuth já materializada, sem `?code=` no querystring).
   // O cliente Supabase (detectSessionInUrl: true) faz o exchange sozinho;
   // aqui só esperamos a sessão materializar, pegamos os tokens e completamos
   // o login no backend chamando /auth/me com o access_token do Google.
@@ -38,10 +41,10 @@ export default function LoginPage() {
       return;
     }
 
-    if (!hasCode) return;
-
-    setExchangingOAuth(true);
     let active = true;
+    let handled = false;
+    let subscription: { unsubscribe: () => void } | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     /** Finaliza o fluxo OAuth — desliga spinner SEM esperar o signOut e
      * limpa o ?code= da URL para evitar reentrada do effect. */
@@ -85,45 +88,63 @@ export default function LoginPage() {
       }
     };
 
-    // Caminho A: o exchange já completou antes deste effect montar
-    // (acontece com frequência — `detectSessionInUrl: true` é síncrono em
-    // muitas versões do supabase-js). Nesse caso, getSession() já tem a sessão.
-    let handled = false;
+    /** Sessão é OAuth quando o provider != "email" (Google, etc.). */
+    const isOAuth = (session: { user?: { app_metadata?: { provider?: string } } } | null) =>
+      Boolean(session?.user?.app_metadata?.provider && session.user.app_metadata.provider !== "email");
+
+    // Decide se entramos em modo "exchanging" — só se há algo pra processar:
+    // (a) `?code=` na URL (callback OAuth fresco) ou (b) sessão OAuth já
+    // materializada no Supabase (callback caiu em outra página por config).
     void supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
-        if (!active || handled || !session) return;
-        handled = true;
-        void handleSession(session);
+        if (!active || handled) return;
+
+        if (session && isOAuth(session)) {
+          // Sessão OAuth pronta — completa o login no backend.
+          handled = true;
+          setExchangingOAuth(true);
+          void handleSession(session);
+          return;
+        }
+
+        if (hasCode) {
+          // Há `?code=` mas o exchange ainda não terminou. Espera SIGNED_IN.
+          setExchangingOAuth(true);
+          const result = supabase.auth.onAuthStateChange((event, freshSession) => {
+            if (!active || handled || !freshSession) return;
+            if (event === "SIGNED_IN" && isOAuth(freshSession)) {
+              handled = true;
+              void handleSession(freshSession);
+            }
+          });
+          subscription = result.data.subscription;
+          // Salvaguarda: se nada resolver em 10 s, libera a UI.
+          timeoutId = setTimeout(() => {
+            if (!active || handled) return;
+            handled = true;
+            finishWithError(
+              "O login com Google demorou demais. Recarregue a página e tente novamente.",
+            );
+          }, 10_000);
+          return;
+        }
+        // Sem code e sem sessão OAuth — visita normal de /login, nada a fazer.
       })
       .catch(() => {
-        // Ignora — o caminho B (onAuthStateChange) ainda pode resolver.
+        // Falha em getSession — não bloqueia a tela; se havia code, o
+        // usuário pode tentar novamente clicando em "Entrar com Google".
+        if (active && hasCode) {
+          finishWithError(
+            "Não foi possível verificar sua sessão Google. Tente novamente.",
+          );
+        }
       });
-
-    // Caminho B: o exchange ainda está em andamento; ouvimos SIGNED_IN.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!active || handled || !session) return;
-      if (event === "SIGNED_IN") {
-        handled = true;
-        void handleSession(session);
-      }
-    });
-
-    // Salvaguarda: se nada resolver em 10 s, libera a UI com mensagem.
-    const timeout = setTimeout(() => {
-      if (!active || handled) return;
-      handled = true;
-      finishWithError(
-        "O login com Google demorou demais. Recarregue a página e tente novamente.",
-      );
-    }, 10_000);
 
     return () => {
       active = false;
-      subscription.unsubscribe();
-      clearTimeout(timeout);
+      subscription?.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [searchParams, loginWithTokens, router]);
 

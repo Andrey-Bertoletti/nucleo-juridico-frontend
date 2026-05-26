@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -21,6 +22,7 @@ function readUrlError(): string | null {
 }
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -31,6 +33,16 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let cancelled = false;
+
+    /** Sessão vinda do Google (provider != "email") significa que o callback
+     * do OAuth caiu aqui em vez de `/login` — Supabase Dashboard com Site URL
+     * apontando pra `/reset-password` ou allowlist sem `/login`. Devolvemos
+     * o usuário pro `/login`, que sabe completar o fluxo OAuth (chamar
+     * `/auth/me` e mostrar mensagem se não estiver cadastrado). */
+    const isOAuthSession = (session: { user?: { app_metadata?: { provider?: string } } } | null) => {
+      const provider = session?.user?.app_metadata?.provider;
+      return Boolean(provider && provider !== "email");
+    };
 
     // 1. Erro explícito na URL (link expirado, otp_expired etc.) → mostra
     //    direto a tela "solicite novo link", sem esperar timeout.
@@ -50,6 +62,11 @@ export default function ResetPasswordPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
+      if (event === "SIGNED_IN" && isOAuthSession(session)) {
+        // Não é recovery — é um login Google que caiu aqui por engano.
+        router.replace("/login");
+        return;
+      }
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setReady(true);
         setExpired(false);
@@ -63,12 +80,16 @@ export default function ResetPasswordPage() {
     });
 
     // 3. Checagem direta: se já existe sessão (ex.: usuário recarregou a
-    //    página depois do exchange), marca pronto.
+    //    página depois do exchange), marca pronto — mas se for OAuth, manda
+    //    pro /login.
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return;
-      if (session) {
-        setReady(true);
+      if (!session) return;
+      if (isOAuthSession(session)) {
+        router.replace("/login");
+        return;
       }
+      setReady(true);
     });
 
     // 4. Timeout de fallback: 8s costuma bastar para o exchange terminar
@@ -86,7 +107,7 @@ export default function ResetPasswordPage() {
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
-  }, []);
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

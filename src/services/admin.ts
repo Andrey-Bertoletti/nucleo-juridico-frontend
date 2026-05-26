@@ -54,6 +54,18 @@ export function changeUserStatus(
   });
 }
 
+export interface PasswordResetResult {
+  user: User;
+  temp_password: string;
+}
+
+/** Redefine senha do usuário gerando uma senha temporária aleatória. */
+export function resetUserPassword(id: string): Promise<PasswordResetResult> {
+  return apiFetch<PasswordResetResult>(`/admin/users/${id}/reset-password`, {
+    method: "POST",
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Áreas jurídicas (admin)
 // ---------------------------------------------------------------------------

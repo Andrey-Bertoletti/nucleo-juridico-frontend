@@ -14,7 +14,11 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { useAuth } from "@/features/auth/useAuth";
 import { ApiError } from "@/services/api";
-import { changeUserStatus, listUsers } from "@/services/admin";
+import {
+  changeUserStatus,
+  listUsers,
+  resetUserPassword,
+} from "@/services/admin";
 import { ROLE_LABELS, type Role, type User, type UserStatus } from "@/types/auth";
 
 const STATUS_LABELS: Record<UserStatus, string> = {
@@ -43,6 +47,11 @@ export default function AdminUsuariosPage() {
   const [confirm, setConfirm] = useState<{
     user: User;
     target: UserStatus;
+  } | null>(null);
+  const [resetConfirm, setResetConfirm] = useState<User | null>(null);
+  const [resetResult, setResetResult] = useState<{
+    user: User;
+    password: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<
@@ -105,6 +114,41 @@ export default function AdminUsuariosPage() {
       });
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function applyReset() {
+    if (!resetConfirm) return;
+    setBusy(true);
+    try {
+      const result = await resetUserPassword(resetConfirm.user_id);
+      setResetConfirm(null);
+      // Mostra a senha em um segundo modal — ela só vem do servidor uma vez.
+      setResetResult({ user: result.user, password: result.temp_password });
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message:
+          err instanceof ApiError
+            ? err.detail
+            : "Não foi possível redefinir a senha.",
+      });
+      setResetConfirm(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyPassword(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setFeedback({ type: "success", message: "Senha copiada para a área de transferência." });
+      window.setTimeout(() => setFeedback(null), 3000);
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Não foi possível copiar — selecione manualmente.",
+      });
     }
   }
 
@@ -229,6 +273,13 @@ export default function AdminUsuariosPage() {
                           Editar
                         </Button>
                       </Link>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setResetConfirm(u)}
+                      >
+                        Resetar senha
+                      </Button>
                       {u.status === "ativo" ? (
                         <Button
                           size="sm"
@@ -298,6 +349,94 @@ export default function AdminUsuariosPage() {
               ? "O usuário não conseguirá entrar no sistema enquanto estiver inativo."
               : "Ele poderá entrar novamente após a reativação."}
           </p>
+        )}
+      </Modal>
+
+      {/* Confirmação do reset de senha */}
+      <Modal
+        open={resetConfirm !== null}
+        onClose={() => setResetConfirm(null)}
+        locked={busy}
+        title="Redefinir senha"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setResetConfirm(null)}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => void applyReset()}
+              isLoading={busy}
+            >
+              Gerar nova senha
+            </Button>
+          </>
+        }
+      >
+        {resetConfirm && (
+          <div className="flex flex-col gap-2 text-sm text-slate-700">
+            <p>
+              O sistema vai gerar uma <strong>senha temporária aleatória</strong>{" "}
+              para <strong>{resetConfirm.name}</strong> ({resetConfirm.email}) e
+              já aplicá-la no Supabase Auth.
+            </p>
+            <p className="text-slate-600">
+              A senha aparecerá UMA VEZ na próxima tela — anote ou copie antes
+              de fechar. Não há como recuperá-la depois (apenas gerar outra).
+            </p>
+            <p className="text-slate-600">
+              Entregue a senha ao usuário pessoalmente e oriente que ele a
+              troque pelo fluxo "Esqueci minha senha" no primeiro login.
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Resultado: mostra a senha gerada */}
+      <Modal
+        open={resetResult !== null}
+        onClose={() => setResetResult(null)}
+        title="Senha temporária gerada"
+        footer={
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => setResetResult(null)}
+          >
+            Fechar
+          </Button>
+        }
+      >
+        {resetResult && (
+          <div className="flex flex-col gap-3 text-sm text-slate-700">
+            <p>
+              Senha temporária para <strong>{resetResult.user.name}</strong> (
+              {resetResult.user.email}):
+            </p>
+            <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-sunken px-3 py-3">
+              <code className="flex-1 select-all font-mono text-[15px] tracking-wide text-ink">
+                {resetResult.password}
+              </code>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void copyPassword(resetResult.password)}
+              >
+                Copiar
+              </Button>
+            </div>
+            <p className="text-[12px] text-accent-rose">
+              ⚠ Esta é a única vez que a senha aparece. Anote ou copie antes de
+              fechar. Se perder, é só gerar outra.
+            </p>
+          </div>
         )}
       </Modal>
     </div>

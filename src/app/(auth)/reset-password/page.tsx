@@ -7,10 +7,35 @@ import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
+// `flowType: "pkce"` casa com o default do supabase-js v2.45+, que é o que
+// o backend (`reset_password_for_email`) emite. `detectSessionInUrl: true`
+// faz o cliente já extrair `?code=` da URL automaticamente quando o módulo
+// carrega — não precisamos chamar `exchangeCodeForSession` manualmente.
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      flowType: "pkce",
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  },
 );
+
+/** Lê erros que o Supabase devolve no hash (#error=...) ou na query (?error=...). */
+function readUrlError(): string | null {
+  if (typeof window === "undefined") return null;
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search);
+  return (
+    hash.get("error_description") ||
+    hash.get("error") ||
+    query.get("error_description") ||
+    query.get("error")
+  );
+}
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -22,31 +47,59 @@ export default function ResetPasswordPage() {
   const [expired, setExpired] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
+    // 1. Erro explícito na URL (link expirado, otp_expired etc.) → mostra
+    //    direto a tela "solicite novo link", sem esperar timeout.
+    const urlError = readUrlError();
+    if (urlError) {
+      setExpired(true);
+      return;
+    }
+
+    // 2. PKCE flow: o Supabase entrega `?code=...` no querystring. Como o
+    //    cliente foi criado com `detectSessionInUrl: true`, ele já faz o
+    //    `exchangeCodeForSession` sozinho assim que carrega. Aqui só precisamos
+    //    esperar a sessão aparecer.
+    //    Implicit flow (legado): o token vem em `#access_token=...` e o
+    //    Supabase dispara `onAuthStateChange("PASSWORD_RECOVERY")`.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setReady(true);
         setExpired(false);
+        return;
+      }
+      // Se a troca do code por sessão falhar, o supabase-js emite SIGNED_OUT
+      // ou simplesmente não emite nada — o timeout abaixo cobre esse caso.
+      if (event === "SIGNED_OUT" && !session) {
+        // Não marca expired imediatamente: pode ser apenas o estado inicial.
       }
     });
 
-    // Check if there's already a session (user may have arrived with valid tokens)
+    // 3. Checagem direta: se já existe sessão (ex.: usuário recarregou a
+    //    página depois do exchange), marca pronto.
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
       if (session) {
         setReady(true);
       }
     });
 
-    // After a short delay, if still not ready, the link may be expired
+    // 4. Timeout de fallback: 8s costuma bastar para o exchange terminar
+    //    mesmo em redes ruins. Se ainda não estiver pronto, assume expirado.
     const timeout = setTimeout(() => {
+      if (cancelled) return;
       setReady((current) => {
         if (!current) setExpired(true);
         return current;
       });
-    }, 4000);
+    }, 8000);
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
@@ -56,8 +109,8 @@ export default function ResetPasswordPage() {
     event.preventDefault();
     setError(null);
 
-    if (password.length < 6) {
-      setError("A senha deve ter no mínimo 6 caracteres.");
+    if (password.length < 8) {
+      setError("A senha deve ter no mínimo 8 caracteres.");
       return;
     }
 
@@ -73,7 +126,14 @@ export default function ResetPasswordPage() {
       });
 
       if (updateError) {
-        setError(updateError.message);
+        // Mensagens comuns: "Auth session missing" quando o link já foi usado
+        // ou expirou no meio do fluxo.
+        if (/session/i.test(updateError.message)) {
+          setExpired(true);
+          setReady(false);
+        } else {
+          setError(updateError.message);
+        }
       } else {
         setSuccess(true);
       }
@@ -150,7 +210,7 @@ export default function ResetPasswordPage() {
             type="password"
             autoComplete="new-password"
             required
-            placeholder="Mínimo de 6 caracteres"
+            placeholder="Mínimo de 8 caracteres"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

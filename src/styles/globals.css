@@ -320,3 +320,78 @@ html.theme-transition *::after {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* =========================================================================
+   Conteúdo de modelos (editor Tiptap + preview + impressão).
+   Tipografia e hierarquia visual mínima para H1/H2/H3, listas, alinhamento.
+   Usado tanto no editor quanto no `.template-content` que renderiza o HTML
+   gerado em pré-visualização e na página de impressão.
+   ========================================================================= */
+.template-content h1 {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  letter-spacing: -0.02em;
+}
+.template-content h2 {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+  letter-spacing: -0.015em;
+}
+.template-content h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.5em 0 0.2em;
+}
+.template-content p {
+  margin: 0.4em 0;
+  line-height: 1.55;
+}
+.template-content ul {
+  list-style: disc;
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.template-content ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.template-content li {
+  margin: 0.15em 0;
+}
+.template-content strong {
+  font-weight: 600;
+}
+.template-content em {
+  font-style: italic;
+}
+.template-content u {
+  text-decoration: underline;
+}
+
+/* O ProseMirror (Tiptap) injeta esses elementos com classes próprias dentro
+   do contentEditable; reaproveitamos as mesmas regras. */
+.ProseMirror {
+  outline: none;
+}
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror p,
+.ProseMirror ul,
+.ProseMirror ol,
+.ProseMirror li,
+.ProseMirror strong,
+.ProseMirror em,
+.ProseMirror u {
+  all: revert;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: rgb(var(--text-tertiary));
+  pointer-events: none;
+  height: 0;
+}

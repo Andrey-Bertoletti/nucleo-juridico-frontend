@@ -181,6 +181,12 @@ export default function AttendanceDetailLayout({
             <Link href={`${basePath}/documentos`}>
               <Button variant="secondary">Anexar documento</Button>
             </Link>
+            <Link
+              href={`/atendimentos/${attendance.id}/imprimir`}
+              target="_blank"
+            >
+              <Button variant="secondary">Imprimir para assinatura</Button>
+            </Link>
             {canForward && attendance.status !== "encaminhado_ao_professor" && (
               <Button onClick={handleSendToTeacher} isLoading={forwarding}>
                 Encaminhar ao professor

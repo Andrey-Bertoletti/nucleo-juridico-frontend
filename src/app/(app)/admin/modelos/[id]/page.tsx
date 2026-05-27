@@ -80,10 +80,17 @@ export default function VerModeloPage() {
         </div>
       </div>
 
+      {template.description && (
+        <Card title="Descrição">
+          <p className="text-[14px] text-ink">{template.description}</p>
+        </Card>
+      )}
+
       <Card title="Conteúdo">
-        <pre className="whitespace-pre-wrap font-sans text-[14px] leading-relaxed text-ink">
-          {template.content}
-        </pre>
+        <div
+          className="template-content text-[14px] text-ink"
+          dangerouslySetInnerHTML={{ __html: template.content }}
+        />
       </Card>
 
       <Card

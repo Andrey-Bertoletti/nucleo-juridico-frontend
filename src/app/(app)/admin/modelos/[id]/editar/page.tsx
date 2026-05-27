@@ -51,6 +51,7 @@ export default function EditarModeloPage() {
 
   const initial: TemplateFormValues = {
     title: template.title,
+    description: template.description ?? "",
     type: template.type,
     content: template.content,
     dynamic_fields: template.dynamic_fields,

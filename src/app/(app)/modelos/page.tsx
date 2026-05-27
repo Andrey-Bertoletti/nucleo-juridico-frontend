@@ -112,8 +112,12 @@ export default function ModelosPage() {
                   {t.title}
                 </h3>
                 <p className="line-clamp-3 text-[13px] text-ink-muted">
-                  {t.content.slice(0, 180)}
-                  {t.content.length > 180 ? "..." : ""}
+                  {t.description ||
+                    t.content
+                      .replace(/<[^>]+>/g, " ")
+                      .replace(/\s+/g, " ")
+                      .slice(0, 160)
+                      .trim() + "..."}
                 </p>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-[11px] text-ink-subtle">

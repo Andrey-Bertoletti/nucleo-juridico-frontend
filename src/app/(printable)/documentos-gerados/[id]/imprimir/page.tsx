@@ -123,10 +123,12 @@ export default function ImprimirDocumentoPage() {
           {doc.template_title}
         </h2>
 
-        {/* Conteúdo interpolado (preserva quebras de linha). */}
-        <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-900">
-          {doc.final_content}
-        </div>
+        {/* Conteúdo já interpolado vindo do backend — HTML enriquecido vindo
+            do editor Tiptap, com valores HTML-escapados pelo `_interpolate`. */}
+        <div
+          className="template-content text-[13px] leading-relaxed text-slate-900"
+          dangerouslySetInnerHTML={{ __html: doc.final_content }}
+        />
 
         {/* Identificação do aluno responsável + linha de assinatura. */}
         <section className="mt-12 border-t border-slate-300 pt-6">

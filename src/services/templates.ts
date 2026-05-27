@@ -31,6 +31,7 @@ export function getTemplate(id: string): Promise<Template> {
 
 export interface TemplateCreatePayload {
   title: string;
+  description?: string | null;
   type: TemplateType;
   content: string;
   dynamic_fields: DynamicField[];
@@ -45,6 +46,7 @@ export function createTemplate(
 
 export interface TemplateUpdatePayload {
   title?: string;
+  description?: string | null;
   type?: TemplateType;
   content?: string;
   dynamic_fields?: DynamicField[];
@@ -61,8 +63,25 @@ export function updateTemplate(
   });
 }
 
+/** Alterna ativo/inativo (reversível). */
+export function changeTemplateStatus(
+  id: string,
+  status: TemplateStatus,
+): Promise<Template> {
+  return apiFetch<Template>(`/templates/${id}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}
+
+/** Soft delete — mantém histórico, marca status=inativo. */
 export function deleteTemplate(id: string): Promise<void> {
   return apiFetch<void>(`/templates/${id}`, { method: "DELETE" });
+}
+
+/** Exclusão permanente — só funciona se nenhum documento foi gerado. */
+export function deleteTemplatePermanent(id: string): Promise<void> {
+  return apiFetch<void>(`/templates/${id}/permanent`, { method: "DELETE" });
 }
 
 // ---------------------------------------------------------------------------

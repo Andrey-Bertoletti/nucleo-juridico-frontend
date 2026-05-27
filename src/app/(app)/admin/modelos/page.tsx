@@ -14,7 +14,12 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { useAuth } from "@/features/auth/useAuth";
 import { ApiError } from "@/services/api";
-import { deleteTemplate, listTemplates } from "@/services/templates";
+import {
+  changeTemplateStatus,
+  deleteTemplate,
+  deleteTemplatePermanent,
+  listTemplates,
+} from "@/services/templates";
 import {
   TEMPLATE_TYPE_LABELS,
   type Template,
@@ -34,7 +39,11 @@ export default function AdminModelosPage() {
   const [typeFilter, setTypeFilter] = useState<TemplateType | "">("");
   const [statusFilter, setStatusFilter] = useState<TemplateStatus | "">("");
 
+  // Modal de inativar (soft delete). `permanent` abre um modal separado.
   const [confirm, setConfirm] = useState<Template | null>(null);
+  const [permanentConfirm, setPermanentConfirm] = useState<Template | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<
     { type: "success" | "error"; message: string } | null
@@ -92,6 +101,57 @@ export default function AdminModelosPage() {
           err instanceof ApiError
             ? err.detail
             : "Não foi possível inativar o modelo.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleStatus(template: Template) {
+    setBusy(true);
+    try {
+      const next = template.status === "ativo" ? "inativo" : "ativo";
+      const updated = await changeTemplateStatus(template.id, next);
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === updated.id ? updated : t)),
+      );
+      setFeedback({
+        type: "success",
+        message: `Modelo "${updated.title}" agora está ${updated.status}.`,
+      });
+      window.setTimeout(() => setFeedback(null), 4000);
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message:
+          err instanceof ApiError
+            ? err.detail
+            : "Não foi possível alterar o status.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyPermanentDelete() {
+    if (!permanentConfirm) return;
+    setBusy(true);
+    try {
+      await deleteTemplatePermanent(permanentConfirm.id);
+      setTemplates((prev) => prev.filter((t) => t.id !== permanentConfirm.id));
+      setFeedback({
+        type: "success",
+        message: `Modelo "${permanentConfirm.title}" excluído permanentemente.`,
+      });
+      setPermanentConfirm(null);
+      window.setTimeout(() => setFeedback(null), 4000);
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message:
+          err instanceof ApiError
+            ? err.detail
+            : "Não foi possível excluir permanentemente.",
       });
     } finally {
       setBusy(false);
@@ -219,7 +279,7 @@ export default function AdminModelosPage() {
                     {new Date(t.updated_at).toLocaleDateString("pt-BR")}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="inline-flex items-center gap-2">
+                    <div className="inline-flex flex-wrap items-center justify-end gap-2">
                       <Link href={`/admin/modelos/${t.id}`}>
                         <Button size="sm" variant="ghost">
                           Ver
@@ -230,16 +290,22 @@ export default function AdminModelosPage() {
                           Editar
                         </Button>
                       </Link>
-                      {t.status === "ativo" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="!text-accent-rose hover:!bg-accent-rose/10"
-                          onClick={() => setConfirm(t)}
-                        >
-                          Inativar
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void toggleStatus(t)}
+                        disabled={busy}
+                      >
+                        {t.status === "ativo" ? "Inativar" : "Ativar"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="!text-accent-rose hover:!bg-accent-rose/10"
+                        onClick={() => setPermanentConfirm(t)}
+                      >
+                        Excluir
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -281,6 +347,47 @@ export default function AdminModelosPage() {
             poderá ser usado para gerar novos documentos. O histórico de
             documentos já gerados é preservado.
           </p>
+        )}
+      </Modal>
+
+      <Modal
+        open={permanentConfirm !== null}
+        onClose={() => setPermanentConfirm(null)}
+        locked={busy}
+        title="Excluir modelo permanentemente"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setPermanentConfirm(null)}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => void applyPermanentDelete()}
+              isLoading={busy}
+            >
+              Excluir definitivamente
+            </Button>
+          </>
+        }
+      >
+        {permanentConfirm && (
+          <div className="flex flex-col gap-2 text-sm text-slate-700">
+            <p>
+              Esta ação <strong>não pode ser desfeita</strong>. O modelo{" "}
+              <strong>{permanentConfirm.title}</strong> será removido do banco.
+            </p>
+            <p className="text-slate-600">
+              Se o modelo já tiver gerado documentos, a exclusão será bloqueada
+              (auditoria). Nesse caso, use "Inativar" — o modelo some das
+              listagens mas o histórico fica preservado.
+            </p>
+          </div>
         )}
       </Modal>
     </div>

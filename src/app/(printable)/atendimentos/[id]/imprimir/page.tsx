@@ -90,11 +90,10 @@ export default function ImprimirAtendimentoPage() {
   if (error || !attendance)
     return <p className="p-8 text-red-700">{error || "Atendimento não encontrado."}</p>;
 
-  // Quando o atendimento foi criado sem identificação manual (atendimentos
-  // antigos pré-feature), deixamos linha em branco no papel pra preencher
-  // à mão. Não bloqueia a impressão — só sinaliza visualmente.
-  const responsibleName = attendance.responsible_student_name || "____________________";
-  const responsibleMat = attendance.responsible_student_matricula || "__________";
+  // Os campos de identificação ficam SEMPRE em branco na versão impressa
+  // para o aluno preencher de próprio punho — isso reforça a autenticidade
+  // (letra dele junto com a assinatura), independente do que estiver salvo
+  // no banco.
 
   return (
     <>
@@ -231,20 +230,15 @@ export default function ImprimirAtendimentoPage() {
           <h3 className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-slate-700">
             Identificação do aluno responsável
           </h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[12px] text-slate-800">
-            <div>
-              <span className="text-slate-500">Nome completo:</span>{" "}
-              <strong className="text-slate-900">{responsibleName}</strong>
-            </div>
-            <div>
-              <span className="text-slate-500">Matrícula:</span>{" "}
-              <strong className="text-slate-900">{responsibleMat}</strong>
-            </div>
-            <div className="col-span-2">
-              <span className="text-slate-500">Data do atendimento:</span>{" "}
-              <strong className="text-slate-900">
-                {new Date(attendance.created_at).toLocaleDateString("pt-BR")}
-              </strong>
+          <p className="mb-3 text-[10px] italic text-slate-500">
+            A preencher pelo próprio aluno, de próprio punho, no ato da assinatura.
+          </p>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-[12px] text-slate-800">
+            <FillField label="Nome completo" />
+            <FillField label="Matrícula" />
+            <div className="col-span-2 grid grid-cols-2 gap-x-8">
+              <FillField label="Data do atendimento" />
+              <FillField label="RG ou CPF" />
             </div>
           </div>
 
@@ -277,6 +271,15 @@ function PrintRow({ label, value }: { label: string; value: string }) {
     <div className="grid grid-cols-[160px_1fr] gap-x-3 py-0.5 text-[12px]">
       <span className="text-slate-500">{label}:</span>
       <span className="text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+function FillField({ label }: { label: string }) {
+  return (
+    <div>
+      <div className="h-5 border-b border-slate-700" />
+      <p className="mt-1 text-[10px] text-slate-600">{label}</p>
     </div>
   );
 }

@@ -178,24 +178,21 @@ export default function ResetPasswordPage() {
 
     // 4. Timeout de fallback: 8s costuma bastar para o exchange terminar
     //    mesmo em redes ruins. Se nada resolveu, decidimos pelo conteúdo da
-    //    URL: havia `?code=` mas nunca virou sessão → provavelmente é um
-    //    callback OAuth que caiu aqui por engano (e perdeu o code_verifier).
-    //    Mandar pro /login dá ao usuário a chance de tentar de novo, em vez
-    //    de mostrar "link expirado" enganoso.
+    //    URL: havia `?code=` mas nunca virou sessão → link antigo/PKCE sem
+    //    code_verifier, redirect incorreto, ou token já usado. Mostramos a
+    //    tela de link inválido para o usuário pedir um novo e-mail.
     const timeout = setTimeout(() => {
       if (cancelled) return;
       setReady((current) => {
         if (current) return current;
         if (urlInfo.hasCode) {
           console.warn(
-            "[reset-password] timeout sem SIGNED_IN com ?code= na URL — " +
-              "callback OAuth provável caindo aqui em vez de /login. " +
-              "Verifique Supabase Dashboard → Authentication → URL Configuration.",
+            "[reset-password] timeout sem sessão com ?code= na URL. " +
+              "Provável link antigo com PKCE sem code_verifier, token usado, " +
+              "ou template/redirect antigo no Supabase Dashboard.",
           );
-          router.replace("/login");
-        } else {
-          setExpired(true);
         }
+        setExpired(true);
         return current;
       });
     }, 8000);

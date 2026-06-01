@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -38,6 +39,21 @@ function readUrlAuthInfo(): UrlAuthInfo {
 function looksLikeRecoveryError(errorCode: string | null): boolean {
   if (!errorCode) return false;
   return errorCode === "otp_expired" || errorCode.startsWith("token_");
+}
+
+type ResetEmailType = Extract<EmailOtpType, "recovery" | "invite">;
+
+function readEmailToken():
+  | { tokenHash: string; type: ResetEmailType }
+  | null {
+  if (typeof window === "undefined") return null;
+  const query = new URLSearchParams(window.location.search);
+  const tokenHash = query.get("token_hash");
+  const type = query.get("type");
+  if (!tokenHash || (type !== "recovery" && type !== "invite")) {
+    return null;
+  }
+  return { tokenHash, type };
 }
 
 export default function ResetPasswordPage() {
@@ -88,7 +104,39 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // 2. PKCE flow: o Supabase entrega `?code=...` no querystring. Como o
+    // 2. Fluxo recomendado para e-mails disparados pelo backend: o template
+    //    envia token_hash + type direto para esta página, e o navegador valida
+    //    com verifyOtp. Isso evita depender de um code_verifier PKCE que só
+    //    existiria se o reset tivesse sido iniciado no próprio frontend.
+    const emailToken = readEmailToken();
+    if (emailToken) {
+      void supabase.auth
+        .verifyOtp({
+          token_hash: emailToken.tokenHash,
+          type: emailToken.type,
+        })
+        .then(({ error: verifyError }) => {
+          if (cancelled) return;
+          if (verifyError) {
+            console.warn("Token de e-mail recusado pelo Supabase.", verifyError);
+            setExpired(true);
+            return;
+          }
+          setReady(true);
+          setExpired(false);
+          window.history.replaceState(null, "", "/reset-password");
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          console.warn("Erro ao validar token de e-mail.", err);
+          setExpired(true);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // 3. PKCE flow legado: o Supabase entrega `?code=...` no querystring. Como o
     //    cliente foi criado com `detectSessionInUrl: true`, ele já faz o
     //    `exchangeCodeForSession` sozinho assim que carrega. Aqui só precisamos
     //    esperar a sessão aparecer.
@@ -115,7 +163,7 @@ export default function ResetPasswordPage() {
       }
     });
 
-    // 3. Checagem direta: se já existe sessão (ex.: usuário recarregou a
+    // 4. Checagem direta: se já existe sessão (ex.: usuário recarregou a
     //    página depois do exchange), marca pronto — mas se for OAuth, manda
     //    pro /login.
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -130,24 +178,21 @@ export default function ResetPasswordPage() {
 
     // 4. Timeout de fallback: 8s costuma bastar para o exchange terminar
     //    mesmo em redes ruins. Se nada resolveu, decidimos pelo conteúdo da
-    //    URL: havia `?code=` mas nunca virou sessão → provavelmente é um
-    //    callback OAuth que caiu aqui por engano (e perdeu o code_verifier).
-    //    Mandar pro /login dá ao usuário a chance de tentar de novo, em vez
-    //    de mostrar "link expirado" enganoso.
+    //    URL: havia `?code=` mas nunca virou sessão → link antigo/PKCE sem
+    //    code_verifier, redirect incorreto, ou token já usado. Mostramos a
+    //    tela de link inválido para o usuário pedir um novo e-mail.
     const timeout = setTimeout(() => {
       if (cancelled) return;
       setReady((current) => {
         if (current) return current;
         if (urlInfo.hasCode) {
           console.warn(
-            "[reset-password] timeout sem SIGNED_IN com ?code= na URL — " +
-              "callback OAuth provável caindo aqui em vez de /login. " +
-              "Verifique Supabase Dashboard → Authentication → URL Configuration.",
+            "[reset-password] timeout sem sessão com ?code= na URL. " +
+              "Provável link antigo com PKCE sem code_verifier, token usado, " +
+              "ou template/redirect antigo no Supabase Dashboard.",
           );
-          router.replace("/login");
-        } else {
-          setExpired(true);
         }
+        setExpired(true);
         return current;
       });
     }, 8000);
@@ -180,6 +225,7 @@ export default function ResetPasswordPage() {
       });
 
       if (updateError) {
+        console.warn("Falha ao atualizar senha no Supabase.", updateError);
         // Mensagens comuns: "Auth session missing" quando o link já foi usado
         // ou expirou no meio do fluxo.
         if (/session/i.test(updateError.message)) {
@@ -191,7 +237,8 @@ export default function ResetPasswordPage() {
       } else {
         setSuccess(true);
       }
-    } catch {
+    } catch (err) {
+      console.warn("Erro inesperado no fluxo de redefinição de senha.", err);
       setError("Erro inesperado ao redefinir a senha. Tente novamente.");
     } finally {
       setSubmitting(false);

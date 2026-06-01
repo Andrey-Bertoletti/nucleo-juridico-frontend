@@ -26,9 +26,10 @@ export default function ForgotPasswordPage() {
           ? `${window.location.origin}/reset-password`
           : undefined;
       await forgotPassword(email, redirectTo);
-    } catch {
+    } catch (err) {
       // Best-effort: mesmo em falha de rede mostramos mensagem genérica
       // (não revela se o e-mail existe ou não).
+      console.warn("Falha ao solicitar recuperação de senha.", err);
     } finally {
       setSubmitting(false);
       setSubmitted(true);

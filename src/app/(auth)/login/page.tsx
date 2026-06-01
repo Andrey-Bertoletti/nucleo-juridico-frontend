@@ -10,6 +10,43 @@ import { useAuth } from "@/features/auth/useAuth";
 import { supabase } from "@/lib/supabase";
 import { ApiError } from "@/services/api";
 
+function readEmailCallbackTarget(): string | null {
+  if (typeof window === "undefined") return null;
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search);
+  const pick = (key: string) => hash.get(key) ?? query.get(key);
+
+  const tokenHash = pick("token_hash");
+  const type = pick("type");
+  if (tokenHash && (type === "recovery" || type === "invite")) {
+    const target = new URL("/reset-password", window.location.origin);
+    target.searchParams.set("token_hash", tokenHash);
+    target.searchParams.set("type", type);
+    return target.pathname + target.search;
+  }
+
+  const error = pick("error");
+  const errorCode = pick("error_code");
+  const errorDescription = pick("error_description");
+  if (
+    errorCode === "otp_expired" ||
+    errorCode?.startsWith("token_") ||
+    /otp|token|expired|recovery|invite/i.test(
+      `${error ?? ""} ${errorDescription ?? ""}`,
+    )
+  ) {
+    const target = new URL("/reset-password", window.location.origin);
+    if (error) target.searchParams.set("error", error);
+    if (errorCode) target.searchParams.set("error_code", errorCode);
+    if (errorDescription) {
+      target.searchParams.set("error_description", errorDescription);
+    }
+    return target.pathname + target.search;
+  }
+
+  return null;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +68,12 @@ export default function LoginPage() {
   // aqui só esperamos a sessão materializar, pegamos os tokens e completamos
   // o login no backend chamando /auth/me com o access_token do Google.
   useEffect(() => {
+    const emailCallbackTarget = readEmailCallbackTarget();
+    if (emailCallbackTarget) {
+      router.replace(emailCallbackTarget);
+      return;
+    }
+
     const hasCode = searchParams.get("code") !== null;
     // Erro vindo do provedor (usuário cancelou no Google, escopo recusado, OU
     // Supabase rejeitou signup do OAuth quando "Disable signups" está ligado).
@@ -102,9 +145,14 @@ export default function LoginPage() {
       }
     };
 
+    const sessionProvider = (
+      session: { user?: { app_metadata?: { provider?: string } } } | null,
+    ) => session?.user?.app_metadata?.provider;
+
     /** Sessão é OAuth quando o provider != "email" (Google, etc.). */
-    const isOAuth = (session: { user?: { app_metadata?: { provider?: string } } } | null) =>
-      Boolean(session?.user?.app_metadata?.provider && session.user.app_metadata.provider !== "email");
+    const isOAuth = (
+      session: { user?: { app_metadata?: { provider?: string } } } | null,
+    ) => Boolean(sessionProvider(session) && sessionProvider(session) !== "email");
 
     // Decide se entramos em modo "exchanging" — só se há algo pra processar:
     // (a) `?code=` na URL (callback OAuth fresco) ou (b) sessão OAuth já
@@ -119,6 +167,12 @@ export default function LoginPage() {
           handled = true;
           setExchangingOAuth(true);
           void handleSession(session);
+          return;
+        }
+
+        if (sessionProvider(session) === "email" && hasCode) {
+          handled = true;
+          router.replace("/reset-password");
           return;
         }
 

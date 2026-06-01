@@ -21,6 +21,7 @@ const MENU: MenuItem[] = [
   { label: "Atendimentos", href: "/atendimentos", icon: IconFolder },
   { label: "Agenda", href: "/agenda", icon: IconCalendar },
   { label: "Documentos", href: "/documentos", icon: IconDoc },
+  { label: "Peças Processuais", href: "/pecas", icon: IconDocCheck },
   { label: "Modelos", href: "/modelos", icon: IconDoc },
   {
     label: "Casos para Análise",
@@ -193,6 +194,15 @@ function IconDoc({ className }: { className?: string }) {
       <path d="M14 2v6h6" />
       <line x1="9" y1="13" x2="15" y2="13" />
       <line x1="9" y1="17" x2="13" y2="17" />
+    </svg>
+  );
+}
+function IconDocCheck({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M9 15l2 2 4-4" />
     </svg>
   );
 }

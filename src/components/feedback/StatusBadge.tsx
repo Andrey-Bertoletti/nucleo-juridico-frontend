@@ -12,6 +12,11 @@ import {
   type AttendanceStatus,
   type BadgeTone,
 } from "@/types/attendance";
+import {
+  PIECE_STATUS_LABELS,
+  PIECE_STATUS_TONES,
+  type PieceStatus,
+} from "@/types/piece";
 
 const TONE_CLASSES: Record<BadgeTone, string> = {
   slate:
@@ -88,6 +93,14 @@ export function AppointmentStatusBadge({
   return (
     <StatusBadge tone={APPOINTMENT_STATUS_TONES[value]}>
       {APPOINTMENT_STATUS_LABELS[value]}
+    </StatusBadge>
+  );
+}
+
+export function PieceStatusBadge({ value }: { value: PieceStatus }) {
+  return (
+    <StatusBadge tone={PIECE_STATUS_TONES[value]}>
+      {PIECE_STATUS_LABELS[value]}
     </StatusBadge>
   );
 }

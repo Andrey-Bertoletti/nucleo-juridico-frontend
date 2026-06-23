@@ -22,6 +22,7 @@ const MENU: MenuItem[] = [
   { label: "Agenda", href: "/agenda", icon: IconCalendar },
   { label: "Documentos", href: "/documentos", icon: IconDoc },
   { label: "Peças Processuais", href: "/pecas", icon: IconDocCheck },
+  { label: "Análise com IA", href: "/analise-ia", icon: IconSparkles },
   { label: "Modelos", href: "/modelos", icon: IconDoc },
   {
     label: "Casos para Análise",
@@ -213,6 +214,13 @@ function IconScales({ className }: { className?: string }) {
       <path d="M5 6h14" />
       <path d="m5 6 3 6a3 3 0 1 1-6 0z" />
       <path d="m19 6 3 6a3 3 0 1 1-6 0z" />
+    </svg>
+  );
+}
+function IconSparkles({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
     </svg>
   );
 }
